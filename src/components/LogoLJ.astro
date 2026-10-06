@@ -1,0 +1,17 @@
+---
+// Logo LJ. La L toma el color del texto; la J, el de --lj-acento.
+import { LJ } from "../data/logoLJ";
+interface Props { class?: string; label?: string }
+const { class: clase, label } = Astro.props;
+---
+
+<svg
+  class={clase}
+  viewBox={LJ.viewBox.join(" ")}
+  role={label ? "img" : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : "true"}
+>
+  <path fill="currentColor" d={LJ.L} />
+  <path fill="var(--lj-acento, #1f3bff)" d={LJ.J} />
+</svg>

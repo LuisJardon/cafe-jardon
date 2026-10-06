@@ -1,0 +1,73 @@
+---
+// Base común de todas las demos: <head>, metadatos y la etiqueta "Demo" que enlaza al portfolio.
+interface Props {
+  title: string;
+  description: string;
+  themeColor?: string;
+}
+const { title, description, themeColor = "#111" } = Astro.props;
+// Ruta base de la web (raíz de un dominio o subcarpeta, según astro.config.mjs).
+const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + "/";
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={themeColor} />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <title>{title}</title>
+    <script is:inline>
+      // Respeta "reducir movimiento" del sistema salvo que el visitante active las animaciones a mano.
+      (function () {
+        var sys = matchMedia("(prefers-reduced-motion: reduce)").matches, force = false;
+        try { force = localStorage.getItem("demo-motion") === "on"; } catch (e) {}
+        if (sys) document.documentElement.classList.add("sys-reduce");
+        if (sys && !force) document.documentElement.classList.add("reduce");
+      })();
+    </script>
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+    <div class="demo-bar">
+      <a class="demo-badge" href="https://luisjardonpiquero.com">Demo de portfolio · Luis Jardón</a>
+      <button class="demo-badge demo-motion" type="button" data-motion-toggle hidden></button>
+    </div>
+    <script is:inline>
+      (function () {
+        var root = document.documentElement, btn = document.querySelector("[data-motion-toggle]");
+        if (!root.classList.contains("sys-reduce")) return;
+        btn.hidden = false;
+        btn.textContent = root.classList.contains("reduce") ? "Activar animaciones" : "Reducir animaciones";
+        btn.addEventListener("click", function () {
+          try { localStorage.setItem("demo-motion", root.classList.contains("reduce") ? "on" : "off"); } catch (e) {}
+          location.reload();
+        });
+      })();
+    </script>
+    <style is:global>
+      .demo-bar { position: fixed; left: 16px; bottom: 16px; z-index: 90; display: flex; gap: 8px; flex-wrap: wrap; }
+      .demo-motion { cursor: pointer; }
+      .demo-motion[hidden] { display: none; }
+      .demo-badge {
+        padding: 0.55em 0.95em;
+        border-radius: 999px;
+        font: 500 12px/1 system-ui, sans-serif;
+        letter-spacing: 0.02em;
+        color: #f4f4f2;
+        background: rgb(20 20 20 / 0.72);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgb(255 255 255 / 0.14);
+        text-decoration: none;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .demo-badge:hover { transform: translateY(-2px); }
+      .demo-badge:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+    </style>
+  </body>
+</html>

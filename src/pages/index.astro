@@ -1,0 +1,1275 @@
+---
+import Demo from "../layouts/Demo.astro";
+import "@fontsource-variable/bricolage-grotesque/standard.css"; // pesos 200-800 y anchura 75-100 %
+import "@fontsource/dm-mono/400.css";
+import "@fontsource/dm-mono/500.css";
+import "@fontsource/instrument-serif/400.css";
+import "@fontsource/instrument-serif/400-italic.css";
+import LogoLJ from "../components/LogoLJ.astro";
+
+// Ruta base de la web (funciona igual en la raíz de un dominio que en una subcarpeta).
+const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + "/";
+
+// Fotos de Unsplash (licencia libre).
+const u = (id: string, w: number, h?: number) =>
+  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=78&w=${w}${h ? `&h=${h}` : ""}`;
+
+// Los cuatro vasos: textos de la web y diseño de su etiqueta 3D.
+const productos = [
+  { nombre: "Espresso", gigante: "ESPRESSO", origen: "Etiopía Guji", notas: "Albaricoque, jazmín y miel", precio: "1,80",
+    fondo: "#ead9c4", tintaGigante: "#24160f", pieza: { tipo: "espresso", arte: "crema", rx: 0.62 },
+    diseno: { nombre: "Espresso", etiqueta: "Etiopía Guji", manga: "#1f1510", tinta: "#f3e7d7", acento: "#e4642b", tapa: "#141010" } },
+  { nombre: "Filtro", gigante: "FILTRO", origen: "Colombia Huila", notas: "Panela, naranja y cacao", precio: "3,40",
+    fondo: "#efd9bb", tintaGigante: "#9a6a3a", pieza: { tipo: "chemex", arte: "filtro", rx: 0.12 },
+    diseno: { nombre: "Filtro", etiqueta: "Colombia Huila", manga: "#d6b289", tinta: "#2b1a10", acento: "#e4642b", tapa: "#f4eee6" } },
+  { nombre: "Cold brew", gigante: "COLD BREW", origen: "Brasil Cerrado", notas: "Chocolate, avellana y 18 horas en frío", precio: "3,60",
+    fondo: "#f3cdad", tintaGigante: "#c64f1b", pieza: { tipo: "cristal", arte: "frio", rx: 0.22 },
+    diseno: { nombre: "Cold brew", etiqueta: "Brasil Cerrado", manga: "#e4642b", tinta: "#fff3e6", acento: "#1f1510", tapa: "#1f1510" } },
+  { nombre: "Latte de avena", gigante: "AVENA", origen: "Mezcla de la casa", notas: "Cereal, caramelo y textura sedosa", precio: "3,10",
+    fondo: "#e7d8c5", tintaGigante: "#4a2c1a", pieza: { tipo: "latte", arte: "roseta", leche: "#efe1c9", rx: 0.34 },
+    diseno: { nombre: "Latte avena", etiqueta: "Mezcla de la casa", manga: "#efe3d1", tinta: "#4a2c1a", acento: "#c9a36a", tapa: "#4a2c1a" } },
+];
+
+// Borde de papel rasgado (pseudoaleatorio pero fijo, para que no cambie entre recargas).
+let semilla = 7;
+const azar = () => ((semilla = (semilla * 16807) % 2147483647) / 2147483647);
+const grieta = Array.from({ length: 34 }, (_, i) => [50 + (azar() - 0.5) * 3.4, (i / 33) * 100]);
+const telaIzq = `polygon(0 0, ${grieta.map(([x, y]) => `${x.toFixed(2)}% ${y.toFixed(2)}%`).join(", ")}, 0 100%)`;
+const telaDer = `polygon(100% 0, ${grieta.map(([x, y]) => `${x.toFixed(2)}% ${y.toFixed(2)}%`).join(", ")}, 100% 100%)`;
+const bordeRasgado = `polygon(${Array.from({ length: 41 }, (_, i) => `${(i * 2.5).toFixed(1)}% ${Math.round(azar() * 26)}px`).join(", ")}, 100% 100%, 0 100%)`;
+
+const proceso = [
+  { verbo: "Elegimos", texto: "Lotes pequeños de fincas que visitamos o conocemos por nombre. Nada de mezclas anónimas.", img: "1447933601403-0c6688de566e" },
+  { verbo: "Tostamos", texto: "Cada martes, en un tostador de 5 kilos al fondo del local. Lo hueles desde la calle.", img: "1511537190424-bbbab87ac5eb" },
+  { verbo: "Molemos", texto: "Justo antes de cada taza, ajustando la molienda a la humedad del día.", img: "1573628684835-ca186702bbde" },
+  { verbo: "Servimos", texto: "En la barra, sin prisas, y te contamos de dónde viene lo que estás bebiendo.", img: "1770123024506-e24e3e55db31" },
+];
+
+const carta = {
+  Espresso: [
+    { n: "Espresso", d: "Etiopía Guji, notas de albaricoque", p: "1,80", img: "1609050471053-8636409f9f5b" },
+    { n: "Cortado", d: "Espresso doble y un dedo de leche", p: "2,00", img: "1564327367919-cb377ea6a88f" },
+    { n: "Flat white", d: "Doble ristretto, leche texturizada fina", p: "2,90", img: "1506372023823-741c83b836fe" },
+    { n: "Capuchino", d: "Espuma gruesa y cacao por encima", p: "2,70", img: "1565581627391-7c8b11507a20" },
+  ],
+  Filtro: [
+    { n: "V60 del día", d: "Origen rotativo, pregunta en barra", p: "3,40", img: "1608552265232-3a1e3feb0271" },
+    { n: "Chemex para dos", d: "600 ml, ideal para compartir", p: "5,80", img: "1608552265293-2f1fe3893ef4" },
+    { n: "Cold brew", d: "18 horas en frío, servido con hielo", p: "3,60", img: "1586792106950-8f02ebb373c1" },
+  ],
+  Horno: [
+    { n: "Croissant de mantequilla", d: "Hojaldrado cada mañana a las 7", p: "2,20", img: "1555507036-ab1f4038808a" },
+    { n: "Napolitana de chocolate", d: "Chocolate 70 % de Colombia", p: "2,40", img: "1597528662465-55ece5734101" },
+    { n: "Pan de masa madre", d: "Hogaza de 800 g para llevar", p: "4,50", img: "1599940778173-e276d4acb2bb" },
+  ],
+};
+
+// Configurador: bebidas, con su dibujo en taza y el diseño de su vaso de papel.
+const bebidas = [
+  { id: "espresso", nombre: "Espresso", arte: "crema", recipiente: "espresso", caliente: true, base: 1.8, leche: false, soloPequeno: true,
+    diseno: { nombre: "Espresso", etiqueta: "Espresso", manga: "#1f1510", tinta: "#f3e7d7", acento: "#e4642b", tapa: "#141010" } },
+  { id: "flatwhite", nombre: "Flat white", arte: "flatwhite", recipiente: "taza", caliente: true, base: 2.9, leche: true,
+    diseno: { nombre: "Flat white", etiqueta: "Flat white", manga: "#efe3d1", tinta: "#4a2c1a", acento: "#e4642b", tapa: "#f4eee6" } },
+  { id: "capuchino", nombre: "Capuchino", arte: "capuchino", recipiente: "taza", caliente: true, base: 2.7, leche: true,
+    diseno: { nombre: "Capuchino", etiqueta: "Capuchino", manga: "#d6b289", tinta: "#2b1a10", acento: "#e4642b", tapa: "#2b1a10" } },
+  { id: "latte", nombre: "Latte", arte: "roseta", recipiente: "latte", caliente: true, base: 2.8, leche: true,
+    diseno: { nombre: "Latte", etiqueta: "Latte", manga: "#efe3d1", tinta: "#4a2c1a", acento: "#c9a36a", tapa: "#4a2c1a" } },
+  { id: "filtro", nombre: "Filtro Chemex", arte: "filtro", recipiente: "chemex", caliente: true, base: 3.4, leche: false,
+    diseno: { nombre: "Filtro", etiqueta: "Filtro Chemex", manga: "#f3e7d7", tinta: "#2b1a10", acento: "#2b1a10", tapa: "#f4eee6" } },
+  { id: "coldbrew", nombre: "Cold brew", arte: "frio", recipiente: "cristal", caliente: false, base: 3.6, leche: false,
+    diseno: { nombre: "Cold brew", etiqueta: "Cold brew", manga: "#e4642b", tinta: "#fff3e6", acento: "#1f1510", tapa: "#1f1510" } },
+];
+const tamanos = [{ id: "S", nombre: "Pequeño", extra: 0 }, { id: "M", nombre: "Mediano", extra: 0.4 }, { id: "L", nombre: "Grande", extra: 0.8 }];
+const leches = [{ id: "entera", nombre: "Entera", extra: 0 }, { id: "avena", nombre: "Avena", extra: 0.3 }, { id: "sinlactosa", nombre: "Sin lactosa", extra: 0.2 }];
+const extras = [{ id: "chupito", nombre: "Chupito extra", extra: 0.5 }, { id: "sirope", nombre: "Sirope de avellana", extra: 0.4 }, { id: "canela", nombre: "Canela por encima", extra: 0 }];
+const euros = (n: number) => n.toFixed(2).replace(".", ",");
+
+// Sitios de Asturias donde se sirve Café Jardón (además del tostadero de Gijón).
+const localidades = ["Gijón", "Oviedo", "Avilés", "Llanes", "Ribadesella", "Cangas de Onís", "Villaviciosa", "Cudillero", "Luarca", "Pola de Siero"];
+const relatos = [
+  "2019. Un tostador de cinco kilos en un bajo de la calle San Bernardo.",
+  "Desde entonces, cada martes huele a café en toda la calle.",
+  "Hoy tenemos barra, horno y doce taburetes. Y seguimos tostando los martes.",
+];
+---
+
+<Demo
+  title="Café Jardón · Tostadores de café en Gijón"
+  description="Demo: web de una cafetería de especialidad con escena 3D, scroll cinematográfico y microinteracciones."
+  themeColor="#1c120d"
+>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="nav" data-nav-bar data-tema="claro">
+    <a href="#top" class="logo" aria-label="Café Jardón, inicio"><LogoLJ class="logo-lj" /><span>Café <em>Jardón</em></span></a>
+    <nav aria-label="Principal">
+      <a href="#productos" data-roll="Productos"><span>Productos</span></a>
+      <a href="#tu-cafe" data-roll="Tu café"><span>Tu café</span></a>
+      <a href="#carta" data-roll="Carta"><span>Carta</span></a>
+      <a href="#visita" data-roll="Visítanos"><span>Visítanos</span></a>
+    </nav>
+    <span class="estado" data-estado>Comprobando horario…</span>
+    <button class="nav-pedido" type="button" data-abrir-pedido aria-haspopup="dialog">
+      <span>Pedido</span><b data-cuenta aria-label="productos">0</b>
+    </button>
+    <button class="nav-menu" type="button" aria-expanded="false" aria-controls="menu-movil" data-menu-btn>
+      <span class="hamb" aria-hidden="true"><i></i><i></i></span>
+      <span class="sr-only">Menú</span>
+    </button>
+  </header>
+
+  <div class="menu-movil" id="menu-movil" data-menu hidden data-lenis-prevent>
+    <nav aria-label="Menú">
+      <a href="#productos">Productos</a>
+      <a href="#tu-cafe">Tu café</a>
+      <a href="#historia">Historia</a>
+      <a href="#carta">Carta</a>
+      <a href="#visita">Visítanos</a>
+    </nav>
+    <p class="menu-pie">Calle San Bernardo 14, Gijón</p>
+  </div>
+
+  <dialog class="pedido" data-pedido aria-labelledby="pedido-titulo">
+    <div class="pedido-cab">
+      <h2 id="pedido-titulo">Tu pedido</h2>
+      <button type="button" class="pedido-cerrar" data-cerrar>Cerrar</button>
+    </div>
+    <ul class="pedido-lista" data-lista></ul>
+    <p class="pedido-vacio" data-vacio>Aún no has añadido nada. Hazte tu café y aparecerá aquí.</p>
+    <div class="pedido-pie">
+      <p class="pedido-total">Total <strong data-total>0,00 €</strong></p>
+      <p class="pedido-nota">Lo pagas en barra al recogerlo, en la calle San Bernardo.</p>
+    </div>
+  </dialog>
+
+  <main id="top">
+    <!-- ESCENARIO 3D: intro, hero y productos comparten un mismo lienzo fijado -->
+    <section class="stage" data-stage data-nav="claro" id="productos">
+      <div class="stage-bg" data-bg></div>
+
+      <div class="gigantes" aria-hidden="true">
+        {productos.map((p, i) => <p class="gigante" data-gigante={i} style={`color:${p.tintaGigante}`}>{p.gigante}</p>)}
+      </div>
+
+      <div class="intro" data-intro aria-hidden="true">
+        <div class="tela tela-izq" data-tela="izq"><div style={`clip-path:${telaIzq}`}></div></div>
+        <div class="tela tela-der" data-tela="der"><div style={`clip-path:${telaDer}`}></div></div>
+        <div class="intro-marca" data-intro-ui><LogoLJ class="intro-lj" /><p>Café <em>Jardón</em></p></div>
+        <div class="intro-barra" data-intro-ui><span data-barra></span></div>
+      </div>
+
+      <canvas class="gl" data-gl role="img" aria-label="Vasos de Café Jardón en 3D rodeados de granos de café"></canvas>
+
+      <div class="hero-ui">
+        <h1 class="hero-title" data-titulo>Café tostado a dos calles de tu casa.</h1>
+        <p class="hero-sub" data-hero-fade>Tostamos lotes pequeños cada martes en Gijón. Para tomar en barra o para llevar.</p>
+        <a href="#carta" class="btn" data-magnetic data-hero-fade><span>Ver la carta</span></a>
+      </div>
+
+      <div class="prod-ui">
+        <h2 class="sr-only">Nuestros cafés</h2>
+        <div class="prod-lista">
+          {productos.map((p, i) => (
+            <article class="pinfo" data-pinfo={i}>
+              <img class="pinfo-foto" data-foto={i} alt={`Vaso de ${p.nombre} de Café Jardón`} width="600" height="720" hidden />
+              <p class="pinfo-origen">{p.origen}</p>
+              <h3>{p.nombre}</h3>
+              <p class="pinfo-notas">{p.notas}</p>
+              <p class="pinfo-precio">{p.precio} €</p>
+            </article>
+          ))}
+        </div>
+        <nav class="pasos" aria-label="Elegir café">
+          {productos.map((p, i) => (
+            <button type="button" data-paso={i} aria-current={i === 0 ? "true" : "false"}>
+              <i style={`background:${p.diseno.manga}`}></i><span>{p.nombre}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </section>
+
+    <!-- CONFIGURADOR: el visitante se hace su café y lo ve en 3D -->
+    <section class="config" id="tu-cafe" data-nav="claro">
+      <div class="config-escena">
+        <canvas data-config-gl role="img" aria-label="Tu café en 3D. Arrastra para girarlo."></canvas>
+        <p class="config-ayuda" aria-hidden="true">Arrastra para girarlo</p>
+      </div>
+
+      <form class="config-panel" data-config>
+        <h2 class="config-title">Hazte tu café</h2>
+        <p class="config-intro">Elige y míralo cambiar. Te lo preparamos para cuando llegues.</p>
+
+        <fieldset>
+          <legend>Bebida</legend>
+          <div class="opciones">
+            {bebidas.map((b, i) => (
+              <label class="opcion"><input type="radio" name="bebida" value={b.id} checked={i === 1} /><span><i style={`background:${b.diseno.manga}`}></i>{b.nombre} <small>{euros(b.base)} €</small></span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Tamaño</legend>
+          <div class="opciones">
+            {tamanos.map((t, i) => (
+              <label class="opcion"><input type="radio" name="tamano" value={t.id} checked={i === 1} /><span>{t.nombre}{t.extra > 0 && <small>+{euros(t.extra)}</small>}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset data-grupo-leche>
+          <legend>Leche</legend>
+          <div class="opciones">
+            {leches.map((l, i) => (
+              <label class="opcion"><input type="radio" name="leche" value={l.id} checked={i === 0} /><span>{l.nombre}{l.extra > 0 && <small>+{euros(l.extra)}</small>}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Extras</legend>
+          <div class="opciones">
+            {extras.map((x) => (
+              <label class="opcion"><input type="checkbox" name="extra" value={x.id} /><span>{x.nombre}{x.extra > 0 && <small>+{euros(x.extra)}</small>}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>¿Dónde?</legend>
+          <div class="opciones">
+            <label class="opcion"><input type="radio" name="para" value="aqui" checked /><span>Para tomar aquí</span></label>
+            <label class="opcion"><input type="radio" name="para" value="llevar" /><span>Para llevar</span></label>
+          </div>
+        </fieldset>
+
+        <div class="config-total">
+          <p class="config-resumen" data-resumen aria-live="polite"></p>
+          <p class="config-precio" data-precio>0,00 €</p>
+        </div>
+        <button type="submit" class="btn" data-magnetic><span>Añadir al pedido</span></button>
+      </form>
+    </section>
+
+    <!-- HISTORIA: vídeo en bucle y frases que aparecen al bajar -->
+    <section class="historia" id="historia" data-nav="oscuro" style={`clip-path:${bordeRasgado}`}>
+      <div class="historia-fondo">
+        <video src={`${base}media/vertido-bucle.mp4`} poster={`${base}media/vertido-final.jpg`} muted loop playsinline autoplay preload="metadata" aria-hidden="true" data-bucle></video>
+      </div>
+      <div class="relatos">
+        {relatos.map((r) => <div class="relato"><p>{r}</p></div>)}
+      </div>
+    </section>
+
+    <div class="oscuro" data-nav="oscuro">
+      <!-- PROCESO -->
+      <section class="proceso" id="proceso" aria-label="Del grano a la taza">
+        <div class="proceso-intro">
+          <h2>Del grano a la taza, sin intermediarios.</h2>
+          <p>Cuatro pasos y las mismas manos en todos.</p>
+        </div>
+        <div class="proceso-grid">
+          {proceso.map((paso, i) => (
+            <article class="paso">
+              <div class="paso-img"><img src={u(paso.img, 900, 1100)} alt="" loading="lazy" width="900" height="1100" /></div>
+              <div class="paso-txt">
+                <span class="paso-n" aria-hidden="true">{i + 1}</span>
+                <h3>{paso.verbo}</h3>
+                <p>{paso.texto}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <!-- MANIFIESTO -->
+      <section class="manifiesto">
+        <p data-fill>
+          Un buen café no necesita azúcar, ni prisa, ni una carta de cuarenta bebidas. Necesita un grano fresco,
+          agua a 93 grados y alguien detrás de la barra que sepa lo que hace.
+        </p>
+      </section>
+
+      <!-- CARTA -->
+      <section class="carta" id="carta">
+        <h2 class="carta-title">La carta</h2>
+        <div class="tabs" role="tablist" aria-label="Categorías de la carta">
+          {Object.keys(carta).map((cat, i) => (
+            <button role="tab" id={`tab-${cat}`} aria-selected={i === 0 ? "true" : "false"} aria-controls={`panel-${cat}`} data-tab={cat}>{cat}</button>
+          ))}
+          <span class="tab-pill" aria-hidden="true" data-pill></span>
+        </div>
+        {Object.entries(carta).map(([cat, items], i) => (
+          <ul class="lista" id={`panel-${cat}`} role="tabpanel" aria-labelledby={`tab-${cat}`} hidden={i !== 0} data-panel={cat}>
+            {items.map((it) => (
+              <li class="item" data-img={u(it.img, 520, 640)}>
+                <img class="item-thumb" src={u(it.img, 240, 240)} alt="" loading="lazy" width="240" height="240" />
+                <div><h3>{it.n}</h3><p>{it.d}</p></div>
+                <span class="precio">{it.p} €</span>
+              </li>
+            ))}
+          </ul>
+        ))}
+        <div class="preview" aria-hidden="true" data-preview><img alt="" /></div>
+      </section>
+
+      <!-- LOCAL -->
+      <section class="local" aria-label="El local">
+        <div class="local-frame" data-zoom>
+          <img src={u("1521017432531-fbd92d768814", 2000, 1300)} alt="Interior del local con clientes en la barra" loading="lazy" width="2000" height="1300" />
+        </div>
+        <div class="local-copy">
+          <h2>Doce taburetes, una barra larga y el tostador a la vista.</h2>
+          <p>Ven a trabajar por la mañana o a charlar por la tarde. El wifi es bueno y nadie te mira mal por quedarte.</p>
+        </div>
+      </section>
+
+      <!-- DÓNDE ENCONTRARNOS: cinta con los sitios de Asturias que sirven nuestro café -->
+      <section class="origenes" aria-labelledby="donde-titulo">
+        <h2 id="donde-titulo" class="donde-titulo">Nuestro café también se sirve en <em>estos sitios de Asturias</em></h2>
+        <div class="marquee" data-marquee>
+          <ul class="marquee-row">{localidades.map((l) => <li>{l}<i aria-hidden="true">✺</i></li>)}</ul>
+          <ul class="marquee-row" aria-hidden="true">{localidades.map((l) => <li>{l}<i>✺</i></li>)}</ul>
+        </div>
+      </section>
+
+      <!-- VISITA -->
+      <section class="visita" id="visita">
+        <figure class="barista" data-reveal-img>
+          <img src={u("1718791985055-e1b06ef5961d", 900, 1150)} alt="Dani, jefe de barra, preparando un café" loading="lazy" width="900" height="1150" />
+          <figcaption>Dani Llaneza, jefe de barra.</figcaption>
+        </figure>
+        <div class="visita-info">
+          <h2 data-split-lines>Pásate. El primer filtro corre de nuestra cuenta.</h2>
+          <dl class="horario">
+            <div><dt>Lunes a viernes</dt><dd>7:30 a 19:00</dd></div>
+            <div><dt>Sábado</dt><dd>9:00 a 14:00</dd></div>
+            <div><dt>Domingo</dt><dd>Cerrado</dd></div>
+          </dl>
+          <address>Calle San Bernardo 14, 33201 Gijón<br /><a href="tel:+34985358214">985 35 82 14</a></address>
+          <a class="btn btn-ghost" data-magnetic href="https://www.openstreetmap.org/search?query=Calle%20San%20Bernardo%2C%20Gij%C3%B3n" target="_blank" rel="noopener"><span>Cómo llegar</span></a>
+        </div>
+      </section>
+
+      <footer class="pie">
+        <p class="pie-mark" aria-hidden="true">Jardón</p>
+        <div class="pie-row">
+          <span>Café Jardón · Gijón</span>
+          <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+          <span>Fotos: Unsplash · Vídeo: Swarup Sarkar (Pexels)</span>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <script type="application/json" id="datos-productos" set:html={JSON.stringify(productos)} />
+  <script type="application/json" id="datos-config" set:html={JSON.stringify({ bebidas, tamanos, leches, extras })} />
+</Demo>
+
+<style>
+  :root {
+    --crema: #f3e7d7;
+    --espresso: #1c120d;
+    --espresso-2: #25180f;
+    --tinta: #2b1a10;          /* texto sobre crema */
+    --tinta-suave: #6b5341;
+    --claro: #f3e7d7;          /* texto sobre oscuro */
+    --claro-suave: #b3a08b;
+    --naranja: #e4642b;        /* acento único */
+    --oro: #c9a36a;
+    --line-claro: rgb(43 26 16 / 0.14);
+    --line-oscuro: rgb(243 231 215 / 0.14);
+    --radius: 14px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --display: "Bricolage Grotesque Variable", system-ui, sans-serif;
+    --mono: "DM Mono", ui-monospace, monospace;
+    --serif: "Instrument Serif", Georgia, serif;
+  }
+
+  :global(html) { background: var(--crema); }
+  :global(body) {
+    margin: 0; background: var(--crema); color: var(--tinta);
+    font: 400 17px/1.55 var(--display); -webkit-font-smoothing: antialiased; overflow-x: clip;
+  }
+  :global(*), :global(*::before), :global(*::after) { box-sizing: border-box; }
+  img { display: block; max-width: 100%; }
+  h1, h2, h3, p { margin: 0; }
+  a { color: inherit; }
+  :global(:focus-visible) { outline: 2px solid var(--naranja); outline-offset: 3px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  .grain {
+    position: fixed; inset: -50%; z-index: 80; pointer-events: none; opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grano 1s steps(4) infinite;
+  }
+  @keyframes grano { 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-1%, 3%); } }
+
+  /* ---------- NAV (cambia de color según la sección) ---------- */
+  .nav {
+    position: fixed; inset: 0 0 auto; z-index: 70; height: 68px; display: flex; align-items: center; gap: 2rem;
+    padding: 0 clamp(16px, 4vw, 48px); color: var(--tinta); transition: color 0.4s;
+  }
+  .nav[data-tema="oscuro"] { color: var(--claro); }
+  /* Al bajar, el menú gana un fondo translúcido para que ningún texto pase por debajo de sus letras. */
+  .nav::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity 0.4s, background 0.4s;
+    background: rgb(243 231 215 / 0.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 1px 0 var(--line-claro);
+  }
+  .nav[data-tema="oscuro"]::before { background: rgb(28 18 13 / 0.78); box-shadow: 0 1px 0 var(--line-oscuro); }
+  .nav.solida::before { opacity: 1; }
+  .logo { display: flex; align-items: center; gap: 0.55rem; text-decoration: none; --lj-acento: var(--naranja); }
+  .logo :global(.logo-lj) { height: 34px; width: auto; }
+  .logo span { font: 400 1.45rem/1 var(--serif); letter-spacing: -0.01em; }
+  em { font-family: var(--serif); font-style: italic; font-weight: 400; }
+  .nav nav { display: flex; gap: 1.6rem; margin-left: auto; }
+  /* Microinteracción: la palabra rueda hacia arriba y entra su copia */
+  .nav nav a { position: relative; display: block; overflow: hidden; text-decoration: none; font-size: 0.95rem; height: 1.5em; }
+  .nav nav a span { display: block; transition: transform 0.5s var(--ease); }
+  .nav nav a::after {
+    content: attr(data-roll); position: absolute; left: 0; top: 100%; color: var(--naranja); transition: transform 0.5s var(--ease);
+  }
+  .nav nav a:hover span, .nav nav a:hover::after { transform: translateY(-100%); }
+  .estado { font: 500 0.78rem/1 var(--mono); display: flex; align-items: center; gap: 0.5em; }
+  .estado::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .estado[data-open="true"]::before { background: #3f9a4a; opacity: 1; animation: latido 2s infinite; }
+  @keyframes latido { 0% { box-shadow: 0 0 0 0 rgb(63 154 74 / 0.6); } 70% { box-shadow: 0 0 0 7px transparent; } }
+
+  /* ---------- BOTÓN: se llena como una taza ---------- */
+  .btn {
+    display: inline-flex; align-items: center; padding: 1.05em 1.8em; border-radius: 999px; white-space: nowrap;
+    background: var(--naranja); color: var(--espresso); font-weight: 650; text-decoration: none;
+    position: relative; overflow: hidden; isolation: isolate;
+  }
+  .btn::before {
+    content: ""; position: absolute; z-index: -1; left: -50%; top: 110%; width: 200%; aspect-ratio: 1;
+    border-radius: 42%; background: var(--espresso); transition: top 0.7s var(--ease);
+    animation: ola 4s linear infinite;
+  }
+  .btn span { transition: color 0.35s; }
+  .btn:hover::before { top: -60%; }
+  .btn:hover span { color: var(--crema); }
+  .btn:active { scale: 0.97; }
+  @keyframes ola { to { rotate: 360deg; } }
+  .btn-ghost { background: transparent; color: var(--claro); box-shadow: inset 0 0 0 1px var(--line-oscuro); }
+  .btn-ghost::before { background: var(--naranja); }
+  .btn-ghost:hover span { color: var(--espresso); }
+
+  /* ---------- ESCENARIO ---------- */
+  .stage { position: relative; height: 100dvh; min-height: 560px; overflow: hidden; color: var(--tinta); }
+  .stage-bg { position: absolute; inset: 0; background: var(--crema); }
+  .gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+
+  .gigantes { position: absolute; inset: 0; z-index: 4; display: grid; place-items: start center; padding-top: 10vh; pointer-events: none; }
+  .gigante {
+    grid-area: 1 / 1; font-weight: 800; font-stretch: 75%; line-height: 0.95; letter-spacing: -0.02em;
+    white-space: nowrap; font-size: 18vw; overflow: hidden; padding: 0.06em 0.04em;
+  }
+
+  .intro { position: absolute; inset: 0; z-index: 2; }
+  .tela { position: absolute; inset: 0; filter: drop-shadow(0 0 30px rgb(0 0 0 / 0.45)); }
+  .tela > div { position: absolute; inset: 0; background: var(--espresso); }
+  .intro-marca {
+    position: absolute; top: 9vh; left: 50%; translate: -50% 0; color: var(--claro); --lj-acento: var(--naranja);
+    display: grid; justify-items: center; gap: 0.7rem;
+  }
+  .intro-marca :global(.intro-lj) { height: 64px; width: auto; }
+  .intro-marca p { font: 400 1.6rem/1 var(--serif); }
+  .intro-barra { position: absolute; left: 50%; bottom: 18vh; width: 120px; height: 2px; translate: -50% 0; background: rgb(243 231 215 / 0.2); }
+  .intro-barra span { position: absolute; inset: 0; background: var(--naranja); transform-origin: left; transform: scaleX(0); }
+
+  .hero-ui { position: absolute; z-index: 4; left: clamp(16px, 4vw, 48px); bottom: max(76px, 9vh); max-width: min(46vw, 640px); }
+  .hero-title {
+    font-weight: 800; font-stretch: 75%; font-size: clamp(3.2rem, 7.6vw, 7.6rem); line-height: 0.88; letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+  .hero-title :global(.char) { display: inline-block; font-stretch: calc(var(--w, 75) * 1%); }
+  .hero-sub { margin: 1.4rem 0 1.8rem; max-width: 38ch; color: var(--tinta-suave); font-size: 1.1rem; }
+
+  .prod-ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .prod-lista { position: absolute; left: clamp(16px, 4vw, 48px); bottom: max(76px, 9vh); width: min(30vw, 360px); height: 13rem; }
+  .pinfo { position: absolute; inset: auto 0 0 0; opacity: 0; }
+  .pinfo-origen { font: 500 0.82rem var(--mono); letter-spacing: 0.04em; color: var(--tinta-suave); }
+  .pinfo h3 { font-weight: 800; font-stretch: 80%; font-size: clamp(2.2rem, 3.4vw, 3.2rem); line-height: 0.95; margin: 0.3rem 0 0.6rem; }
+  .pinfo-notas { color: var(--tinta-suave); }
+  .pinfo-precio { margin-top: 0.9rem; font: 500 1.4rem var(--mono); }
+  .pasos {
+    position: absolute; right: clamp(16px, 4vw, 48px); top: 50%; translate: 0 -50%; display: grid; gap: 0.35rem;
+    pointer-events: auto; opacity: 0;
+  }
+  .pasos button {
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; border: 0; background: none; cursor: pointer;
+    font: 600 0.92rem var(--display); color: var(--tinta-suave); padding: 0.4rem 0; transition: color 0.3s;
+  }
+  .pasos i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.2); transition: scale 0.4s var(--ease); order: 2; }
+  .pasos button:hover i { scale: 1.5; }
+  .pasos button[aria-current="true"] { color: var(--tinta); }
+  .pasos button[aria-current="true"] i { scale: 1.6; }
+
+  /* ---------- HISTORIA ---------- */
+  .historia { position: relative; background: var(--espresso); color: var(--claro); margin-top: -26px; }
+  .historia-fondo { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
+  .historia-fondo video { width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
+  .historia-fondo::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 50%, transparent 30%, var(--espresso) 100%); }
+  .relatos { position: relative; margin-top: -100dvh; }
+  .relato { min-height: 100dvh; display: grid; place-items: center; padding: 0 clamp(16px, 6vw, 80px); }
+  .relato p { font-weight: 700; font-stretch: 85%; font-size: clamp(2.2rem, 5.4vw, 5rem); line-height: 1; letter-spacing: -0.03em; max-width: 18ch; text-align: center; }
+
+  /* ---------- SECCIONES OSCURAS ---------- */
+  .oscuro { background: var(--espresso); color: var(--claro); }
+  .proceso { padding: clamp(100px, 16vh, 180px) clamp(16px, 4vw, 48px) 0; max-width: 1180px; margin: 0 auto; }
+  .proceso-intro { max-width: 34rem; margin-bottom: clamp(48px, 7vw, 96px); }
+  .proceso-intro h2 { font-weight: 800; font-stretch: 80%; font-size: clamp(2.4rem, 5vw, 4.6rem); line-height: 0.95; letter-spacing: -0.02em; }
+  .proceso-intro p { margin-top: 1.2rem; color: var(--claro-suave); }
+  .proceso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(48px, 6vw, 96px) clamp(24px, 5vw, 80px); }
+  .paso:nth-child(even) { margin-top: clamp(60px, 12vh, 140px); }
+  .paso-img { aspect-ratio: 4 / 5; border-radius: var(--radius); overflow: hidden; }
+  .paso-img img { width: 100%; height: 118%; margin-top: -9%; object-fit: cover; }
+  .paso-txt { display: grid; grid-template-columns: auto 1fr; column-gap: 1rem; margin-top: 1.4rem; }
+  .paso-n { font: 500 0.85rem var(--mono); color: var(--naranja); padding-top: 0.6em; grid-row: span 2; }
+  .paso h3 { font-size: 2rem; letter-spacing: -0.03em; font-weight: 700; }
+  .paso p { color: var(--claro-suave); margin-top: 0.4rem; }
+
+  .manifiesto { padding: clamp(100px, 18vh, 200px) clamp(16px, 4vw, 48px); }
+  .manifiesto p { font-size: clamp(1.8rem, 4.2vw, 3.8rem); line-height: 1.12; letter-spacing: -0.035em; font-weight: 600; max-width: 26ch; margin-left: auto; margin-right: 6vw; }
+
+  .carta { position: relative; padding: 0 clamp(16px, 4vw, 48px) clamp(80px, 14vh, 160px); max-width: 1180px; margin: 0 auto; }
+  .carta-title { font-weight: 800; font-stretch: 75%; font-size: clamp(4rem, 13vw, 11rem); letter-spacing: -0.02em; line-height: 0.85; text-transform: uppercase; }
+  .tabs { position: relative; display: inline-flex; gap: 0.25rem; padding: 0.3rem; margin: 2.2rem 0 1.6rem; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line-oscuro); }
+  .tabs button { position: relative; z-index: 1; border: 0; background: none; color: var(--claro-suave); cursor: pointer; font: 600 0.95rem var(--display); padding: 0.7em 1.3em; border-radius: 999px; transition: color 0.3s; }
+  .tabs button[aria-selected="true"] { color: var(--espresso); }
+  .tab-pill { position: absolute; top: 0.3rem; bottom: 0.3rem; left: 0; border-radius: 999px; background: var(--claro); }
+  .lista { list-style: none; margin: 0; padding: 0; max-width: 720px; }
+  .item { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 1.2rem; padding: 1.3rem 0; border-bottom: 1px solid var(--line-oscuro); }
+  .item-thumb { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; }
+  .item h3 { font-size: clamp(1.4rem, 2.6vw, 2.2rem); letter-spacing: -0.03em; font-weight: 650; transition: transform 0.5s var(--ease), color 0.3s; }
+  .item p { color: var(--claro-suave); font-size: 0.95rem; }
+  .precio { font: 500 1.05rem var(--mono); transition: color 0.3s; }
+  .preview { position: fixed; top: 0; left: 0; z-index: 60; width: 260px; height: 320px; pointer-events: none; border-radius: var(--radius); overflow: hidden; opacity: 0; scale: 0.6; }
+  .preview img { width: 100%; height: 100%; object-fit: cover; }
+  @media (hover: hover) and (pointer: fine) {
+    .item-thumb { display: none; }
+    .item { grid-template-columns: 1fr auto; }
+    .item:hover h3 { transform: translateX(14px); color: var(--naranja); }
+    .item:hover .precio { color: var(--naranja); }
+  }
+
+  .local-frame { height: 100dvh; display: grid; place-items: center; overflow: hidden; }
+  .local-frame img { width: 100%; height: 100%; object-fit: cover; clip-path: inset(22% 26% round var(--radius)); }
+  .local-copy { max-width: 40rem; padding: clamp(60px, 10vh, 120px) clamp(16px, 4vw, 48px); }
+  .local-copy h2 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.02; letter-spacing: -0.04em; font-weight: 700; }
+  .local-copy p { color: var(--claro-suave); margin-top: 1.2rem; max-width: 46ch; }
+
+  .origenes { padding: 2rem 0; border-block: 1px solid var(--line-oscuro); overflow: hidden; }
+  .marquee { display: flex; width: max-content; }
+  .donde-titulo { padding: 0 clamp(16px, 4vw, 48px) 1.4rem; font: 500 1rem var(--display); color: var(--claro-suave); }
+  .donde-titulo em { color: var(--claro); font-size: 1.25em; }
+  .marquee-row { display: flex; flex-shrink: 0; list-style: none; margin: 0; padding: 0; }
+  .marquee li { font-size: clamp(2rem, 5vw, 4.4rem); font-weight: 800; font-stretch: 80%; letter-spacing: -0.02em; white-space: nowrap; display: inline-flex; align-items: center; }
+  .marquee i { font-style: normal; color: var(--naranja); font-size: 0.5em; margin: 0 0.8em; }
+
+  .visita { display: grid; grid-template-columns: 0.8fr 1fr; gap: clamp(32px, 6vw, 100px); align-items: end; padding: clamp(100px, 16vh, 180px) clamp(16px, 4vw, 48px); }
+  .barista { margin: 0; }
+  .barista img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--radius); }
+  .barista figcaption { margin-top: 0.8rem; color: var(--claro-suave); font-size: 0.9rem; }
+  .visita-info h2 { font-weight: 800; font-stretch: 80%; font-size: clamp(2.4rem, 5vw, 4.6rem); line-height: 0.95; letter-spacing: -0.02em; }
+  .horario { margin: 2.4rem 0 1.6rem; display: grid; gap: 0.2rem; }
+  .horario div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; }
+  .horario div + div { border-top: 1px solid var(--line-oscuro); }
+  .horario dt { color: var(--claro-suave); }
+  .horario dd { margin: 0; font-family: var(--mono); }
+  .horario div[data-hoy] dt { color: var(--claro); }
+  .horario div[data-hoy] dt::after { content: " · hoy"; color: var(--naranja); }
+  address { font-style: normal; margin-bottom: 2rem; line-height: 1.7; }
+
+  .pie { padding: 0 clamp(16px, 4vw, 48px) 80px; overflow: hidden; }
+  .pie-mark { font: italic 400 clamp(7rem, 30vw, 28rem)/0.9 var(--serif); letter-spacing: -0.03em; color: var(--naranja); padding-bottom: 0.08em; }
+  .pie-row { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; color: var(--claro-suave); font-size: 0.9rem; padding-top: 1.6rem; border-top: 1px solid var(--line-oscuro); }
+
+  /* ---------- MENÚ HAMBURGUESA (pantallas medianas y móvil) ---------- */
+  .nav-menu {
+    display: none; width: 44px; height: 44px; border-radius: 999px; border: 1px solid currentColor; background: none;
+    color: inherit; cursor: pointer; place-items: center; flex-shrink: 0;
+  }
+  .hamb { position: relative; width: 18px; height: 10px; display: block; }
+  .hamb i { position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px; background: currentColor; transition: transform 0.45s var(--ease), top 0.45s var(--ease); }
+  .hamb i:first-child { top: 0; }
+  .hamb i:last-child { top: 8px; }
+  .nav-menu[aria-expanded="true"] .hamb i:first-child { top: 4px; transform: rotate(45deg); }
+  .nav-menu[aria-expanded="true"] .hamb i:last-child { top: 4px; transform: rotate(-45deg); }
+  .menu-movil {
+    position: fixed; inset: 0; z-index: 69; background: var(--espresso); color: var(--claro);
+    display: flex; flex-direction: column; justify-content: center; padding: 100px clamp(24px, 8vw, 80px) 48px;
+  }
+  .menu-movil[hidden] { display: none; }
+  .menu-movil nav { display: grid; gap: 0.2rem; }
+  .menu-movil a { font: italic 400 clamp(2.8rem, 11vw, 5.5rem)/1.05 var(--serif); text-decoration: none; width: fit-content; }
+  .menu-movil a:hover { color: var(--naranja); }
+  .menu-pie { margin-top: auto; color: var(--claro-suave); font: 500 0.85rem var(--mono); }
+  :global(html.menu-abierto) { overflow: hidden; }
+
+  /* ---------- BOTÓN Y PANEL DEL PEDIDO ---------- */
+  .nav-pedido {
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.5rem 0.45rem 0.95rem; border-radius: 999px;
+    border: 1px solid currentColor; background: none; color: inherit; font: 600 0.9rem var(--display); cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+  }
+  .nav-pedido b {
+    min-width: 1.6rem; height: 1.6rem; display: grid; place-items: center; border-radius: 999px;
+    background: var(--naranja); color: var(--espresso); font: 600 0.8rem var(--mono);
+  }
+  .nav-pedido:hover { background: var(--naranja); color: var(--espresso); }
+  .nav-pedido:hover b { background: var(--espresso); color: var(--crema); }
+
+  .pedido {
+    position: fixed; inset: 0 0 0 auto; margin: 0; width: min(420px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh;
+    border: 0; padding: 28px 24px; background: var(--crema); color: var(--tinta);
+    display: flex; flex-direction: column; gap: 1rem;
+    translate: 100% 0; transition: translate 0.55s var(--ease), display 0.55s allow-discrete, overlay 0.55s allow-discrete;
+  }
+  .pedido:not([open]) { display: none; }
+  .pedido[open] { translate: 0 0; }
+  @starting-style { .pedido[open] { translate: 100% 0; } }
+  .pedido::backdrop { background: rgb(28 18 13 / 0.45); backdrop-filter: blur(4px); }
+  .pedido-cab { display: flex; justify-content: space-between; align-items: center; }
+  .pedido-cab h2 { font: italic 400 2.4rem/1 var(--serif); }
+  .pedido-cerrar { border: 0; background: none; font: 600 0.9rem var(--display); color: var(--tinta-suave); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .pedido-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8rem; overflow-y: auto; }
+  /* Las líneas se crean con JS: necesitan :global para recibir estos estilos. */
+  .pedido-lista :global(li) { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--line-claro); }
+  .pedido-lista :global(p) { font-weight: 600; line-height: 1.3; }
+  .pedido-lista :global(span) { font: 500 1rem var(--mono); }
+  .pedido-lista :global(button) { grid-column: 1; justify-self: start; border: 0; background: none; padding: 0; color: var(--tinta-suave); font: 500 0.85rem var(--display); cursor: pointer; text-decoration: underline; }
+  .pedido-vacio { color: var(--tinta-suave); }
+  .pedido-pie { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--tinta); }
+  .pedido-total { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.2rem; }
+  .pedido-total strong { font-family: var(--mono); }
+  .pedido-nota { color: var(--tinta-suave); font-size: 0.9rem; margin-top: 0.4rem; }
+
+  /* ---------- CONFIGURADOR ---------- */
+  .config {
+    position: relative; background: var(--crema); display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(24px, 4vw, 64px);
+    align-items: start; padding: clamp(100px, 14vh, 150px) clamp(16px, 4vw, 48px) clamp(120px, 18vh, 200px);
+  }
+  .config-escena {
+    position: sticky; top: 88px; height: min(76dvh, 700px); border-radius: var(--radius);
+    background: radial-gradient(70% 60% at 50% 62%, #f8efe3 0%, #ead9c4 100%);
+  }
+  .config-escena canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
+  .config-escena canvas:active { cursor: grabbing; }
+  .config-ayuda { position: absolute; left: 50%; bottom: 18px; translate: -50% 0; font: 500 0.78rem var(--mono); color: var(--tinta-suave); white-space: nowrap; }
+  .config-title { font-weight: 800; font-stretch: 75%; font-size: clamp(3rem, 6vw, 5.6rem); line-height: 0.88; text-transform: uppercase; }
+  .config-intro { margin: 1rem 0 2rem; color: var(--tinta-suave); max-width: 40ch; }
+  .config fieldset { border: 0; margin: 0 0 1.5rem; padding: 0; }
+  .config legend { font: 500 0.82rem var(--mono); color: var(--tinta-suave); margin-bottom: 0.6rem; padding: 0; }
+  .opciones { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .opcion { position: relative; }
+  .opcion input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .opcion span {
+    display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.62rem 1rem; border-radius: 999px;
+    box-shadow: inset 0 0 0 1px var(--line-claro); background: rgb(255 255 255 / 0.35); font-weight: 600; font-size: 0.95rem;
+    transition: background 0.25s, color 0.25s, box-shadow 0.25s, scale 0.25s var(--ease);
+  }
+  .opcion small { font: 500 0.78rem var(--mono); opacity: 0.7; }
+  .opcion i { width: 11px; height: 11px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25); }
+  .opcion:hover span { box-shadow: inset 0 0 0 1px var(--tinta); }
+  .opcion input:checked + span { background: var(--espresso); color: var(--crema); box-shadow: none; }
+  .opcion input:active + span { scale: 0.96; }
+  .opcion input:focus-visible + span { outline: 2px solid var(--naranja); outline-offset: 2px; }
+  .opcion input:disabled { cursor: not-allowed; }
+  .opcion input:disabled + span { opacity: 0.35; text-decoration: line-through; }
+  .config-total { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin: 2rem 0 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--tinta); }
+  .config-resumen { color: var(--tinta-suave); max-width: 32ch; }
+  .config-precio { font: 500 clamp(2rem, 3.4vw, 2.8rem)/1 var(--mono); white-space: nowrap; }
+  .vuelo { position: fixed; z-index: 95; pointer-events: none; object-fit: contain; }
+
+  /* ---------- PANTALLAS MEDIANAS: los enlaces pasan al menú ---------- */
+  @media (max-width: 1100px) {
+    .nav nav { display: none; }
+    .nav-menu { display: grid; }
+    .estado { margin-left: auto; }
+  }
+  @media (max-width: 560px) {
+    .estado { display: none; }
+    .nav-pedido { margin-left: auto; }
+  }
+
+  /* ---------- MÓVIL ---------- */
+  @media (max-width: 860px) {
+    .nav { gap: 0.7rem; }
+    .nav-pedido span { display: none; }
+    .nav-pedido { padding: 0.3rem; }
+    .config { grid-template-columns: 1fr; padding-top: 80px; }
+    .config-escena { top: 64px; height: 40dvh; z-index: 2; box-shadow: 0 18px 30px -18px rgb(43 26 16 / 0.35); }
+    .config-total { flex-direction: column; align-items: start; }
+    .hero-ui { top: 84px; bottom: auto; right: 16px; max-width: none; }
+    .hero-title { font-size: clamp(2.4rem, 11.2vw, 3.6rem); }
+    .hero-sub { margin: 0.8rem 0 1.1rem; font-size: 0.98rem; }
+    .btn { padding: 0.85em 1.4em; }
+    .gigantes { padding-top: 13vh; }
+    .prod-lista { left: 16px; right: 16px; width: auto; bottom: 108px; height: 10rem; }
+    .pinfo h3 { font-size: 2rem; }
+    .pinfo-precio { margin-top: 0.4rem; font-size: 1.15rem; }
+    .pinfo-notas { font-size: 0.95rem; }
+    .pasos { top: auto; bottom: 60px; left: 16px; right: 16px; translate: none; display: flex; justify-content: space-between; }
+    .pasos span { display: none; }
+    .pasos button { padding: 0.6rem; }
+    .proceso-grid { grid-template-columns: 1fr; }
+    .paso:nth-child(even) { margin-top: 0; }
+    .manifiesto p { margin: 0; }
+    .local-frame { height: 70dvh; }
+    .visita { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- SIN ANIMACIONES: todo estático y legible ---------- */
+  :global(html.reduce) .grain, :global(html.reduce) .btn::before, :global(html.reduce) .estado[data-open="true"]::before { animation: none; }
+  :global(html.reduce) .intro, :global(html.reduce) .gigantes, :global(html.reduce) .pasos { display: none; }
+  :global(html.reduce) .stage { height: auto; overflow: visible; }
+  /* El titular se queda en la primera pantalla (la sección crece con la lista de cafés). */
+  @media (min-width: 861px) { :global(html.reduce) .hero-ui { bottom: auto; top: calc(100dvh - max(76px, 9vh)); translate: 0 -100%; } }
+  :global(html.reduce) .stage-bg { position: static; height: 100dvh; }
+  :global(html.reduce) .gl { height: 100dvh; inset: 0 0 auto 0; }
+  :global(html.reduce) .prod-ui { position: static; padding: 80px clamp(16px, 4vw, 48px) 140px; }
+  :global(html.reduce) .prod-ui h2 { position: static; width: auto; height: auto; clip-path: none; font-weight: 800; font-stretch: 80%; font-size: clamp(2.4rem, 5vw, 4.6rem); margin-bottom: 2rem; }
+  :global(html.reduce) .prod-lista { position: static; width: auto; height: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
+  :global(html.reduce) .pinfo { position: static; opacity: 1; }
+  :global(html.reduce) .pinfo-foto { display: block; width: 100%; aspect-ratio: 5 / 6; object-fit: contain; margin-bottom: 1rem; }
+  :global(html.reduce) .pinfo-precio { position: static; }
+  :global(html.reduce) .historia-fondo video { display: none; }
+  :global(html.reduce) .local-frame img { clip-path: none; }
+</style>
+
+<script>
+  import { gsap, ScrollTrigger, SplitText, startSmoothScroll, magnetic, reduceMotion, finePointer } from "../scripts/motion";
+  import { crearEscena, type Diseno, type PiezaProducto } from "../scripts/cafe3d";
+  import type * as THREE from "three";
+
+  type Producto = { nombre: string; fondo: string; diseno: Diseno; pieza: PiezaProducto & { rx: number } };
+  const productos: Producto[] = JSON.parse(document.getElementById("datos-productos")!.textContent!);
+  const movil = () => window.innerWidth < 861;
+  const $ = <T extends Element = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const $$ = <T extends Element = HTMLElement>(s: string) => [...document.querySelectorAll<T>(s)];
+
+  // ---------- Abierto ahora ----------
+  const horario: Record<number, [number, number] | null> = { 0: null, 1: [7.5, 19], 2: [7.5, 19], 3: [7.5, 19], 4: [7.5, 19], 5: [7.5, 19], 6: [9, 14] };
+  const ahora = new Date();
+  const hora = ahora.getHours() + ahora.getMinutes() / 60;
+  const tramo = horario[ahora.getDay()];
+  const abierto = !!tramo && hora >= tramo[0] && hora < tramo[1];
+  const estadoEl = $("[data-estado]");
+  estadoEl.dataset.open = String(abierto);
+  estadoEl.textContent = abierto ? "Abierto ahora" : "Cerrado ahora";
+  $$(".horario > div")[ahora.getDay() === 0 ? 2 : ahora.getDay() === 6 ? 1 : 0]?.setAttribute("data-hoy", "");
+
+  // ---------- Pestañas de la carta ----------
+  const tabs = $$<HTMLButtonElement>("[data-tab]");
+  const pill = $("[data-pill]");
+  const movePill = (btn: HTMLElement, instant = false) =>
+    gsap.to(pill, { x: btn.offsetLeft, width: btn.offsetWidth, duration: instant || reduceMotion ? 0 : 0.6, ease: "expo.out" });
+  tabs.forEach((btn) => btn.addEventListener("click", () => {
+    if (btn.getAttribute("aria-selected") === "true") return;
+    tabs.forEach((t) => t.setAttribute("aria-selected", String(t === btn)));
+    movePill(btn);
+    const actual = $("[data-panel]:not([hidden])");
+    const siguiente = $(`[data-panel="${btn.dataset.tab}"]`);
+    if (reduceMotion) { actual.hidden = true; siguiente.hidden = false; return; }
+    gsap.to(actual.children, {
+      y: -16, opacity: 0, duration: 0.25, stagger: 0.03, ease: "power2.in",
+      onComplete: () => {
+        actual.hidden = true;
+        gsap.set(actual.children, { clearProps: "all" });
+        siguiente.hidden = false;
+        gsap.from(siguiente.children, { y: 28, opacity: 0, duration: 0.7, stagger: 0.06, ease: "expo.out" });
+        ScrollTrigger.refresh();
+      },
+    });
+  }));
+  $$("[data-magnetic]").forEach((el) => magnetic(el));
+
+  // ---------- Escena 3D ----------
+  const canvas = $<HTMLCanvasElement>("[data-gl]");
+  const stage = $("[data-stage]");
+
+  // Composición de los vasos en el hero (unidades del mundo 3D, antes de escalar).
+  const GRUPO = [
+    { x: 0.15, y: -0.35, z: 0.6, rx: 0.05, ry: -0.25, rz: -0.06 },  // espresso, delante
+    { x: -1.95, y: 0.55, z: -1.2, rx: 0.1, ry: 0.5, rz: 0.14 },     // filtro
+    { x: 2.15, y: 0.45, z: -0.6, rx: 0.08, ry: -0.6, rz: -0.16 },   // cold brew
+    { x: -0.55, y: 1.95, z: -3.2, rx: 0.22, ry: 0.3, rz: 0.3 },     // avena, al fondo
+  ];
+
+  Promise.all([
+    document.fonts.load('800 100px "Bricolage Grotesque Variable"'),
+    document.fonts.load('italic 100px "Instrument Serif"'),
+  ]).then(() => document.fonts.ready).then(() => {
+    const escena = crearEscena(canvas, productos.map((p) => p.diseno), productos.map((p) => p.pieza), { movil: movil() });
+
+    type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number; s: number };
+    // Vasos de papel del hero: en grupo o saliendo por arriba.
+    const pose = (i: number, tipo: "grupo" | "arriba"): Pose => {
+      const v = escena.vista();
+      const s = movil() ? Math.min(0.62, v.w / 7.4) : Math.min(0.82, v.w / 15);
+      if (tipo === "arriba") return { x: 0, y: v.h * 0.5 + 3.5, z: 0, rx: 0.5, ry: -Math.PI * 2, rz: 0.4, s };
+      const cx = movil() ? 0 : v.w * 0.24, cy = movil() ? -v.h * 0.2 : 0.1;
+      const o = GRUPO[i];
+      return { x: cx + o.x * s, y: cy + o.y * s, z: o.z, rx: o.rx, ry: o.ry, rz: o.rz, s };
+    };
+    // Anchura de cada recipiente (con plato), para que ninguno se salga de la pantalla.
+    const ANCHO = { espresso: 2.2, taza: 3.04, latte: 1.44, chemex: 2.04, cristal: 1.56 } as const;
+    // Cafés de la sección de productos: en su recipiente real, entrando por arriba y saliendo por abajo.
+    const posePieza = (i: number, tipo: "centro" | "arriba" | "abajo"): Pose => {
+      const v = escena.vista();
+      const { alto } = escena.piezas[i];
+      const pz = productos[i].pieza;
+      const objetivo = movil() ? Math.min(2.4, v.w * 0.6) : 3.1;
+      const s = objetivo / Math.max(alto, ANCHO[pz.tipo] * 0.8);
+      if (tipo === "centro") return { x: 0, y: movil() ? 0.22 : -0.78, z: 1, rx: pz.rx, ry: 0, rz: 0, s };
+      if (tipo === "arriba") return { x: 0, y: v.h * 0.5 + 3.5, z: 0, rx: pz.rx + 0.4, ry: -Math.PI * 2, rz: 0.4, s };
+      return { x: 0, y: -v.h * 0.5 - 3.5, z: 0, rx: -0.5, ry: Math.PI, rz: -0.5, s };
+    };
+    const situar = (obj: { position: any; rotation: any; scale: any }, p: Pose, escala = p.s) => {
+      obj.position.set(p.x, p.y, p.z);
+      obj.rotation.set(p.rx, p.ry, p.rz);
+      obj.scale.setScalar(escala);
+    };
+    const colocar = (i: number, p: Pose, escala = p.s) => situar(escena.vasos[i], p, escala);
+
+    window.addEventListener("resize", () => {
+      escena.redimensionar();
+      if (reduceMotion) { productos.forEach((_, i) => colocar(i, pose(i, "grupo"))); escena.pintar(); }
+    });
+
+    // ===== Versión sin animaciones: composición fija + fotos de cada vaso =====
+    if (reduceMotion) {
+      escena.estado.vaiven = 0;
+      escena.intro.visible = false;
+      // Sin animación los granos se quedarían quietos encima del texto: no se muestran.
+      $$<HTMLImageElement>("[data-foto]").forEach((img, i) => { img.src = escena.foto(i, 600, 720); img.hidden = false; });
+      productos.forEach((_, i) => colocar(i, pose(i, "grupo")));
+      escena.pintar();
+      ScrollTrigger.create({ trigger: stage, start: "top bottom", end: "bottom top", onToggle: (s) => (escena.estado.activo = s.isActive) });
+      montarNav();
+      return;
+    }
+
+    // ===== Versión animada =====
+    history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);
+    const lenis = startSmoothScroll();
+    lenis?.stop();
+
+    if (finePointer) {
+      window.addEventListener("pointermove", (e) => {
+        escena.puntero.x = (e.clientX / innerWidth) * 2 - 1;
+        escena.puntero.y = (e.clientY / innerHeight) * 2 - 1;
+      });
+    }
+
+    // Textos partidos en letras.
+    const titulo = SplitText.create("[data-titulo]", { type: "words,chars", mask: "words", charsClass: "char" });
+    // Las palabras gigantes se ajustan al ancho de la pantalla antes de partirlas.
+    const ajustarGigantes = () => $$("[data-gigante]").forEach((el) => {
+      el.style.fontSize = "100px";
+      const ancho = el.scrollWidth;
+      el.style.fontSize = Math.min((100 * innerWidth * (movil() ? 0.94 : 0.9)) / ancho, innerHeight * (movil() ? 0.16 : 0.27)) + "px";
+    });
+    ajustarGigantes();
+    window.addEventListener("resize", ajustarGigantes);
+    const gigantes = $$("[data-gigante]").map((el) => SplitText.create(el, { type: "chars" }));
+    const infos = $$("[data-pinfo]");
+    gsap.set(gigantes.flatMap((g) => g.chars), { yPercent: 115 });
+    gsap.set(infos, { opacity: 0, y: 30 });
+    gsap.set(titulo.chars, { yPercent: 110 });
+    gsap.set(["[data-hero-fade]", ".nav"], { opacity: 0, y: 20 });
+
+    // Posición inicial: vasos en su sitio pero sin tamaño; grano de la intro en el centro.
+    productos.forEach((_, i) => colocar(i, pose(i, "grupo"), 0));
+    productos.forEach((_, i) => situar(escena.piezas[i].soporte, posePieza(i, "arriba")));
+    const v0 = escena.vista();
+    escena.intro.position.set(0, movil() ? 0.35 : 0.2, 2);
+    escena.intro.scale.setScalar(movil() ? 1.15 : 1.45);
+    const balanceo = gsap.fromTo(escena.intro.rotation, { y: -0.45, x: 0.15 }, { y: 0.45, x: -0.1, duration: 2.2, ease: "sine.inOut", repeat: -1, yoyo: true });
+
+    // ---------- INTRO: carga, el grano se parte y la pantalla se rasga ----------
+    const intro = gsap.timeline({ delay: 0.3 });
+    intro
+      .from(escena.intro.scale, { x: 0, y: 0, z: 0, duration: 1.1, ease: "back.out(1.7)" }, 0)
+      .from("[data-intro-ui]", { opacity: 0, y: 12, duration: 0.8, ease: "expo.out" }, 0.2)
+      .to("[data-barra]", { scaleX: 1, duration: 1.4, ease: "power2.inOut" }, 0.3)
+      .add(() => balanceo.kill())
+      .to(escena.intro.rotation, { x: 0, y: 0, duration: 0.35, ease: "power2.out" })
+      .to("[data-intro-ui]", { opacity: 0, duration: 0.3 }, "<")
+      .addLabel("grieta")
+      // Primero se agrieta: las mitades se separan un poco y aparece la raja.
+      .to(escena.der.position, { x: 0.12, duration: 0.45, ease: "power3.out" }, "grieta")
+      .to(escena.izq.position, { x: -0.12, duration: 0.45, ease: "power3.out" }, "grieta")
+      .to('[data-tela="izq"]', { xPercent: -1.2, duration: 0.45, ease: "power3.out" }, "grieta")
+      .to('[data-tela="der"]', { xPercent: 1.2, duration: 0.45, ease: "power3.out" }, "grieta")
+      .addLabel("rotura", "+=0.15")
+      .add(() => escena.estallar(escena.intro.position.clone()), "rotura")
+      .to(escena.der.position, { x: v0.w * 0.42, y: -0.6, z: 1, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      .to(escena.der.rotation, { y: 1.4, z: -0.9, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      .to(escena.izq.position, { x: -v0.w * 0.42, y: 0.5, z: 1, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      .to(escena.izq.rotation, { y: -1.3, z: 0.8, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      .to('[data-tela="izq"]', { xPercent: -62, rotate: -4, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      .to('[data-tela="der"]', { xPercent: 62, rotate: 4, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      // Aparece el hero: vasos, granos, titular.
+      .addLabel("hero", "rotura+=0.75");
+    productos.forEach((_, i) => intro.to(escena.vasos[i].scale, { x: pose(i, "grupo").s, y: pose(i, "grupo").s, z: pose(i, "grupo").s, duration: 1.1, ease: "back.out(1.5)" }, `hero+=${i * 0.09}`));
+    intro
+      .to(escena.grupoFlot.scale, { x: 1, y: 1, z: 1, duration: 1.4, ease: "expo.out" }, "hero")
+      .to(titulo.chars, { yPercent: 0, duration: 1, stagger: 0.016, ease: "expo.out" }, "hero+=0.1")
+      .to(["[data-hero-fade]", ".nav"], { opacity: 1, y: 0, duration: 0.9, stagger: 0.08, ease: "expo.out" }, "hero+=0.4")
+      .add(() => {
+        $("[data-intro]").style.display = "none";
+        escena.intro.visible = false;
+        lenis?.start();
+        montarScroll();
+      });
+
+    // Tipografía cinética: las letras del titular se ensanchan cerca del cursor.
+    if (finePointer) {
+      const letras = titulo.chars as HTMLElement[];
+      const anchos = letras.map((el) => gsap.quickTo(el, "--w", { duration: 0.6, ease: "power3.out" }));
+      $("[data-titulo]").addEventListener("pointermove", (e) => {
+        letras.forEach((el, i) => {
+          const r = el.getBoundingClientRect();
+          const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+          anchos[i](75 + 25 * Math.max(0, 1 - d / 160));
+        });
+      });
+      $("[data-titulo]").addEventListener("pointerleave", () => anchos.forEach((f) => f(75)));
+    }
+
+    // ---------- SCROLL: cada tramo revela el siguiente café ----------
+    function montarScroll() {
+      const N = productos.length;
+      const bg = $("[data-bg]");
+      const pasosBtns = $$<HTMLButtonElement>("[data-paso]");
+
+      // Mueve un objeto 3D de una pose a otra dentro de la línea de tiempo (valores recalculados al redimensionar).
+      const mover = (tl: gsap.core.Timeline, obj: THREE.Object3D, de: () => Pose, a: () => Pose, en: number, dur = 0.9) => {
+        const P = (k: keyof Pose) => () => de()[k];
+        const Q = (k: keyof Pose) => () => a()[k];
+        const base = { duration: dur, ease: "power3.inOut", immediateRender: false };
+        tl.fromTo(obj.position, { x: P("x"), y: P("y"), z: P("z") }, { x: Q("x"), y: Q("y"), z: Q("z"), ...base }, en)
+          .fromTo(obj.rotation, { x: P("rx"), y: P("ry"), z: P("rz") }, { x: Q("rx"), y: Q("ry"), z: Q("rz"), ...base }, en)
+          .fromTo(obj.scale, { x: P("s"), y: P("s"), z: P("s") }, { x: Q("s"), y: Q("s"), z: Q("s"), ...base }, en);
+      };
+      const vaso = (i: number) => escena.vasos[i];
+      const pieza = (i: number) => escena.piezas[i].soporte;
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power2.inOut" },
+        scrollTrigger: {
+          trigger: stage, start: "top top", end: () => "+=" + innerHeight * (N + 0.4), pin: true, scrub: 0.8,
+          invalidateOnRefresh: true,
+          // Imán al café más cercano a la posición actual (sin proyectar la inercia, que hacía saltarse cafés).
+          snap: {
+            snapTo: (v: number, self?: ScrollTrigger) => {
+              const p = self ? self.progress : v;
+              return Object.values(tl.labels).map((t) => t / tl.duration()).reduce((a, b) => (Math.abs(b - p) < Math.abs(a - p) ? b : a));
+            },
+            duration: { min: 0.25, max: 0.7 }, delay: 0.1, ease: "power1.inOut",
+          },
+          onUpdate: (self) => (escena.estado.scroll = self.progress * N),
+        },
+        // Paso activo según el cabezal de la propia línea de tiempo (sigue avanzando tras soltar la rueda).
+        onUpdate: () => {
+          let activo = 0;
+          for (let k = 0; k < N; k++) if (tl.time() >= tl.labels["p" + k] - 0.5) activo = k;
+          pasosBtns.forEach((b, k) => b.setAttribute("aria-current", String(k === activo && tl.time() > 0.5)));
+        },
+      });
+
+      tl.fromTo(escena.grupoFlot.scale, { x: 1, y: 1, z: 1 }, { x: () => (movil() ? 0.001 : 1), y: () => (movil() ? 0.001 : 1), z: () => (movil() ? 0.001 : 1), duration: 0.5, immediateRender: false }, 0.1);
+      tl.addLabel("inicio", 0)
+        .to(titulo.chars, { yPercent: -110, stagger: 0.006, duration: 0.45, ease: "power2.in" }, 0)
+        .to("[data-hero-fade]", { opacity: 0, y: -20, duration: 0.3 }, 0)
+        .to(bg, { backgroundColor: productos[0].fondo, duration: 0.9 }, 0.1);
+      // Los vasos de papel se van por arriba y entra el primer café en su recipiente real.
+      for (let i = 0; i < N; i++) mover(tl, vaso(i), () => pose(i, "grupo"), () => pose(i, "arriba"), 0.04 * i, 0.75);
+      mover(tl, pieza(0), () => posePieza(0, "arriba"), () => posePieza(0, "centro"), 0.25, 0.85);
+      tl.fromTo(gigantes[0].chars, { yPercent: 115 }, { yPercent: 0, stagger: 0.03, duration: 0.6, ease: "expo.out", immediateRender: false }, 0.45)
+        .fromTo(infos[0], { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, immediateRender: false }, 0.65)
+        .fromTo(".pasos", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.4, immediateRender: false }, 0.65)
+        .addLabel("p0", 1.1);
+
+      let t = 1.4;
+      for (let k = 1; k < N; k++) {
+        mover(tl, pieza(k - 1), () => posePieza(k - 1, "centro"), () => posePieza(k - 1, "abajo"), t);
+        mover(tl, pieza(k), () => posePieza(k, "arriba"), () => posePieza(k, "centro"), t + 0.1);
+        tl.to(gigantes[k - 1].chars, { yPercent: -115, stagger: 0.02, duration: 0.4, ease: "power2.in" }, t)
+          .fromTo(gigantes[k].chars, { yPercent: 115 }, { yPercent: 0, stagger: 0.03, duration: 0.6, ease: "expo.out", immediateRender: false }, t + 0.35)
+          .to(infos[k - 1], { opacity: 0, y: -30, duration: 0.3 }, t)
+          .fromTo(infos[k], { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, immediateRender: false }, t + 0.5)
+          .to(bg, { backgroundColor: productos[k].fondo, duration: 0.9 }, t);
+        t += 1;
+        tl.addLabel("p" + k, t);
+        t += 0.3;
+      }
+      tl.to({}, { duration: 0.3 }); // pausa final antes de soltar el escenario
+
+      // Los botones de la derecha llevan a cada café.
+      pasosBtns.forEach((b, k) => b.addEventListener("click", () => {
+        const st = tl.scrollTrigger!;
+        const y = st.start + (tl.labels["p" + k] / tl.duration()) * (st.end - st.start);
+        // Mientras dura el desplazamiento se bloquea la rueda, así el imán no lo lleva a otro café.
+        lenis ? lenis.scrollTo(y, { duration: 1.2, lock: true, force: true }) : window.scrollTo(0, y);
+      }));
+
+      // Solo se pinta la escena 3D mientras se ve.
+      ScrollTrigger.create({
+        trigger: ".historia", start: "top top",
+        onEnter: () => (escena.estado.activo = false),
+        onLeaveBack: () => (escena.estado.activo = true),
+      });
+
+      montarResto();
+      ScrollTrigger.refresh();
+    }
+  });
+
+  // ---------- Resto de la página ----------
+  // Color del menú según el fondo de la sección que tiene debajo.
+  function montarNav() {
+    const nav = $("[data-nav-bar]");
+    ScrollTrigger.create({ start: 40, end: "max", onToggle: (s) => nav.classList.toggle("solida", s.isActive) });
+    $$("[data-nav]").forEach((sec) => ScrollTrigger.create({
+      trigger: sec, start: "top 34px", end: "bottom 34px",
+      onToggle: (s) => { if (s.isActive) nav.dataset.tema = sec.dataset.nav; },
+    }));
+  }
+
+  function montarResto() {
+    montarNav();
+
+    // Historia: el vídeo se acerca y las frases aparecen y se desvanecen.
+    gsap.fromTo("[data-bucle]", { scale: 1.2 }, { scale: 1, ease: "none", scrollTrigger: { trigger: ".historia", start: "top bottom", end: "bottom top", scrub: true } });
+    $$(".relato p").forEach((p) => {
+      gsap.timeline({ scrollTrigger: { trigger: p.parentElement, start: "top bottom", end: "bottom top", scrub: true } })
+        .fromTo(p, { opacity: 0, y: 90, filter: "blur(14px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1, ease: "power2.out" })
+        .to(p, { opacity: 0, y: -90, filter: "blur(14px)", duration: 1, ease: "power2.in" }, "+=0.5");
+    });
+
+    // Proceso.
+    gsap.from(".proceso-intro > *", { y: 40, opacity: 0, stagger: 0.12, duration: 1, ease: "expo.out", scrollTrigger: { trigger: ".proceso", start: "top 80%" } });
+    $$(".paso").forEach((p) => {
+      gsap.from(p, { y: 80, opacity: 0, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: p, start: "top 88%" } });
+      gsap.fromTo(p.querySelector("img"), { yPercent: -8 }, { yPercent: 8, ease: "none", scrollTrigger: { trigger: p, start: "top bottom", end: "bottom top", scrub: true } });
+    });
+
+    // Manifiesto.
+    const fill = SplitText.create("[data-fill]", { type: "words" });
+    gsap.fromTo(fill.words, { opacity: 0.14 }, { opacity: 1, stagger: 0.1, ease: "none", scrollTrigger: { trigger: ".manifiesto", start: "top 70%", end: "bottom 60%", scrub: true } });
+
+    // Carta.
+    const cartaT = SplitText.create(".carta-title", { type: "chars", mask: "chars" });
+    gsap.from(cartaT.chars, { yPercent: 100, stagger: 0.04, duration: 1.1, ease: "expo.out", scrollTrigger: { trigger: ".carta", start: "top 80%" } });
+    gsap.from("[data-panel]:not([hidden]) .item", { y: 40, opacity: 0, duration: 0.9, stagger: 0.07, ease: "expo.out", scrollTrigger: { trigger: ".lista", start: "top 85%" } });
+    document.fonts.ready.then(() => movePill(tabs[0], true));
+    window.addEventListener("resize", () => movePill(tabs.find((t) => t.getAttribute("aria-selected") === "true")!, true));
+
+    if (finePointer) {
+      const preview = $("[data-preview]");
+      const img = preview.querySelector("img")!;
+      const px = gsap.quickTo(preview, "x", { duration: 0.6, ease: "power3.out" });
+      const py = gsap.quickTo(preview, "y", { duration: 0.6, ease: "power3.out" });
+      const rot = gsap.quickTo(preview, "rotate", { duration: 0.8, ease: "power3.out" });
+      let lastX = 0;
+      window.addEventListener("pointermove", (e) => {
+        // La foto va en la columna libre a la derecha de la lista, nunca encima del texto.
+        const derecha = $("[data-panel]:not([hidden])").getBoundingClientRect().right;
+        px(Math.min(derecha + 56, innerWidth - 280)); py(gsap.utils.clamp(80, innerHeight - 340, e.clientY - 160));
+        rot(gsap.utils.clamp(-14, 14, (e.clientX - lastX) * 0.6));
+        lastX = e.clientX;
+      });
+      $$(".item").forEach((item) => {
+        item.addEventListener("pointerenter", () => { img.src = item.dataset.img!; gsap.to(preview, { opacity: 1, scale: 1, duration: 0.5, ease: "expo.out", overwrite: "auto" }); });
+        item.addEventListener("pointerleave", () => gsap.to(preview, { opacity: 0, scale: 0.6, duration: 0.4, ease: "power3.in", overwrite: "auto" }));
+      });
+    }
+
+    // Local.
+    gsap.timeline({ scrollTrigger: { trigger: "[data-zoom]", start: "top top", end: "+=110%", pin: true, scrub: 1 } })
+      .fromTo("[data-zoom] img", { clipPath: "inset(22% 26% round 14px)", scale: 1.25 }, { clipPath: "inset(0% 0% round 0px)", scale: 1, ease: "none" });
+    gsap.from(".local-copy > *", { y: 40, opacity: 0, stagger: 0.12, duration: 1, ease: "expo.out", scrollTrigger: { trigger: ".local-copy", start: "top 80%" } });
+
+    // Orígenes.
+    const cinta = gsap.to("[data-marquee]", { xPercent: -50, duration: 28, ease: "none", repeat: -1 });
+    ScrollTrigger.create({
+      trigger: ".origenes", start: "top bottom", end: "bottom top",
+      onUpdate: (self) => {
+        gsap.to(cinta, { timeScale: self.direction * (1 + Math.min(Math.abs(self.getVelocity()) / 300, 5)), duration: 0.3, overwrite: true });
+        gsap.to(cinta, { timeScale: self.direction, duration: 1, delay: 0.3 });
+      },
+    });
+
+    // Visita y pie.
+    gsap.from("[data-reveal-img] img", { clipPath: "inset(0 0 100% 0 round 14px)", scale: 1.2, duration: 1.6, ease: "expo.inOut", scrollTrigger: { trigger: ".visita", start: "top 75%" } });
+    const lineas = SplitText.create("[data-split-lines]", { type: "lines", mask: "lines" });
+    gsap.from(lineas.lines, { yPercent: 105, duration: 1.1, stagger: 0.1, ease: "expo.out", scrollTrigger: { trigger: ".visita-info", start: "top 80%" } });
+    gsap.from(".horario > div", { x: -30, opacity: 0, stagger: 0.08, duration: 0.8, ease: "expo.out", scrollTrigger: { trigger: ".horario", start: "top 85%" } });
+    const pie = SplitText.create(".pie-mark", { type: "chars", mask: "chars" });
+    gsap.from(pie.chars, { yPercent: 100, stagger: 0.05, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".pie", start: "top 85%" } });
+  }
+
+  // Sin animaciones, la pastilla de las pestañas también necesita colocarse.
+  if (reduceMotion) document.fonts.ready.then(() => movePill(tabs[0], true));
+</script>
+
+<script>
+  // ---------- Menú hamburguesa, configurador "Hazte tu café" y pedido ----------
+  import { gsap } from "gsap";
+  import { crearConfigurador, type Bebida, type Eleccion } from "../scripts/configurador3d";
+
+  type Opcion = { id: string; nombre: string; extra: number };
+  type BebidaDatos = Bebida & { base: number; leche: boolean; soloPequeno?: boolean };
+  const datos: { bebidas: BebidaDatos[]; tamanos: Opcion[]; leches: Opcion[]; extras: Opcion[] } =
+    JSON.parse(document.getElementById("datos-config")!.textContent!);
+  const reducir = document.documentElement.classList.contains("reduce");
+  const euros = (n: number) => n.toFixed(2).replace(".", ",") + " €";
+
+  // ---------- Menú hamburguesa ----------
+  const menuBtn = document.querySelector<HTMLButtonElement>("[data-menu-btn]")!;
+  const menu = document.querySelector<HTMLElement>("[data-menu]")!;
+  const barra = document.querySelector<HTMLElement>("[data-nav-bar]")!;
+  let temaPrevio = "claro";
+  function abrirMenu(abrir: boolean) {
+    menuBtn.setAttribute("aria-expanded", String(abrir));
+    menuBtn.querySelector(".sr-only")!.textContent = abrir ? "Cerrar menú" : "Menú";
+    document.documentElement.classList.toggle("menu-abierto", abrir);
+    if (abrir) {
+      temaPrevio = barra.dataset.tema || "claro";
+      barra.dataset.tema = "oscuro";
+      menu.hidden = false;
+      if (!reducir) gsap.from(menu.querySelectorAll("a, .menu-pie"), { yPercent: 60, opacity: 0, stagger: 0.06, duration: 0.7, ease: "expo.out" });
+    } else {
+      menu.hidden = true;
+      barra.dataset.tema = temaPrevio;
+    }
+  }
+  menuBtn.addEventListener("click", () => abrirMenu(menuBtn.getAttribute("aria-expanded") !== "true"));
+  menu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => abrirMenu(false)));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { abrirMenu(false); menuBtn.focus(); } });
+
+  const form = document.querySelector<HTMLFormElement>("[data-config]")!;
+  const precioEl = document.querySelector<HTMLElement>("[data-precio]")!;
+  const resumenEl = document.querySelector<HTMLElement>("[data-resumen]")!;
+  const radios = (name: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`)];
+
+  // ---------- Lectura del formulario ----------
+  function leer() {
+    const f = new FormData(form);
+    const bebida = datos.bebidas.find((b) => b.id === f.get("bebida"))!;
+    // Reglas: el espresso solo en pequeño; las bebidas sin leche no tienen tipo de leche.
+    radios("tamano").forEach((r) => (r.disabled = !!bebida.soloPequeno && r.value !== "S"));
+    if (bebida.soloPequeno) radios("tamano").find((r) => r.value === "S")!.checked = true;
+    radios("leche").forEach((r) => (r.disabled = !bebida.leche));
+    const tamano = datos.tamanos.find((t) => t.id === new FormData(form).get("tamano"))!;
+    const leche = bebida.leche ? datos.leches.find((l) => l.id === f.get("leche"))! : null;
+    const extras = datos.extras.filter((x) => f.getAll("extra").includes(x.id));
+    const para = f.get("para") as "aqui" | "llevar";
+    const precio = bebida.base + tamano.extra + (leche?.extra ?? 0) + extras.reduce((s, x) => s + x.extra, 0);
+
+    const partes = [`${bebida.nombre} ${bebida.soloPequeno ? "" : tamano.nombre.toLowerCase()}`.trim()];
+    if (leche) partes.push(`con leche ${leche.id === "entera" ? "entera" : leche.id === "avena" ? "de avena" : "sin lactosa"}`);
+    if (extras.length) partes.push((leche ? "y " : "con ") + extras.map((x) => x.nombre.toLowerCase()).join(", "));
+    const texto = partes.join(" ") + (para === "aqui" ? ", para tomar aquí" : ", para llevar");
+
+    const eleccion: Eleccion = {
+      bebida, tamano: tamano.id as Eleccion["tamano"], leche: (leche?.id ?? "ninguna") as Eleccion["leche"],
+      canela: extras.some((x) => x.id === "canela"), para,
+    };
+    return { eleccion, precio, texto };
+  }
+
+  // ---------- Precio que cuenta hasta el nuevo valor ----------
+  const mostrado = { v: 0 };
+  function pintarPrecio(precio: number) {
+    gsap.to(mostrado, {
+      v: precio, duration: reducir ? 0 : 0.6, ease: "power3.out", overwrite: true,
+      onUpdate: () => (precioEl.textContent = euros(mostrado.v)),
+    });
+  }
+
+  // ---------- Pedido (se guarda en este navegador) ----------
+  type Linea = { texto: string; precio: number };
+  const CLAVE = "jardon-pedido";
+  let pedido: Linea[] = [];
+  try { pedido = JSON.parse(localStorage.getItem(CLAVE) || "[]"); } catch { pedido = []; }
+  const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify(pedido)); } catch { /* sin almacenamiento: el pedido vive solo en esta visita */ } };
+
+  const dialogo = document.querySelector<HTMLDialogElement>("[data-pedido]")!;
+  const lista = dialogo.querySelector<HTMLUListElement>("[data-lista]")!;
+  const cuenta = document.querySelector<HTMLElement>("[data-cuenta]")!;
+  const botonPedido = document.querySelector<HTMLButtonElement>("[data-abrir-pedido]")!;
+
+  function pintarPedido() {
+    cuenta.textContent = String(pedido.length);
+    botonPedido.setAttribute("aria-label", `Ver pedido, ${pedido.length} ${pedido.length === 1 ? "producto" : "productos"}`);
+    lista.replaceChildren(...pedido.map((l, i) => {
+      const li = document.createElement("li");
+      const p = document.createElement("p"); p.textContent = l.texto;
+      const s = document.createElement("span"); s.textContent = euros(l.precio);
+      const b = document.createElement("button"); b.type = "button"; b.textContent = "Quitar";
+      b.addEventListener("click", () => { pedido.splice(i, 1); guardar(); pintarPedido(); });
+      li.append(p, s, b);
+      return li;
+    }));
+    dialogo.querySelector<HTMLElement>("[data-vacio]")!.hidden = pedido.length > 0;
+    dialogo.querySelector<HTMLElement>("[data-total]")!.textContent = euros(pedido.reduce((s, l) => s + l.precio, 0));
+  }
+  botonPedido.addEventListener("click", () => dialogo.showModal());
+  dialogo.querySelector("[data-cerrar]")!.addEventListener("click", () => dialogo.close());
+  dialogo.addEventListener("click", (e) => { if (e.target === dialogo) dialogo.close(); }); // clic fuera del panel
+  pintarPedido();
+
+  // ---------- Escena 3D (cuando estén las fuentes de la etiqueta) ----------
+  Promise.all([
+    document.fonts.load('800 100px "Bricolage Grotesque Variable"'),
+    document.fonts.load('italic 100px "Instrument Serif"'),
+  ]).then(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>("[data-config-gl]")!;
+    const escena = crearConfigurador(canvas, { reducir });
+
+    const actualizar = () => {
+      const { eleccion, precio, texto } = leer();
+      escena.aplicar(eleccion);
+      pintarPrecio(precio);
+      resumenEl.textContent = texto + ".";
+    };
+    form.addEventListener("change", actualizar);
+    actualizar();
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const { precio, texto } = leer();
+      pedido.push({ texto, precio });
+      guardar();
+
+      const terminar = () => {
+        pintarPedido();
+        if (!reducir) gsap.fromTo(cuenta, { scale: 1.8 }, { scale: 1, duration: 0.7, ease: "elastic.out(1, 0.4)" });
+      };
+      if (reducir) return terminar();
+
+      // El café "vuela" hasta el botón del pedido.
+      const desde = canvas.getBoundingClientRect(), hasta = botonPedido.getBoundingClientRect();
+      const img = document.createElement("img");
+      img.src = escena.foto();
+      img.alt = "";
+      img.className = "vuelo";
+      Object.assign(img.style, { left: desde.left + "px", top: desde.top + "px", width: desde.width + "px", height: desde.height + "px" });
+      document.body.append(img);
+      const dx = hasta.left + hasta.width / 2 - (desde.left + desde.width / 2);
+      const dy = hasta.top + hasta.height / 2 - (desde.top + desde.height / 2);
+      gsap.timeline({ onComplete: () => { img.remove(); terminar(); } })
+        .to(img, { x: dx, duration: 0.9, ease: "power2.inOut" }, 0)
+        .to(img, { y: dy, duration: 0.9, ease: "back.in(1.4)" }, 0)
+        .to(img, { scale: 0.05, opacity: 0.6, duration: 0.9, ease: "power3.in" }, 0);
+    });
+  });
+</script>
