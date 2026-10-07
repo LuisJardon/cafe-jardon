@@ -21,12 +21,13 @@ const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL :
     <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
     <title>{title}</title>
     <script is:inline>
-      // Respeta "reducir movimiento" del sistema salvo que el visitante active las animaciones a mano.
+      // Estas demos existen para enseñar animación: se ven SIEMPRE con animaciones.
+      // Quien tenga "reducir movimiento" en su sistema ve un botón para quitarlas (y se recuerda su elección).
       (function () {
-        var sys = matchMedia("(prefers-reduced-motion: reduce)").matches, force = false;
-        try { force = localStorage.getItem("demo-motion") === "on"; } catch (e) {}
+        var sys = matchMedia("(prefers-reduced-motion: reduce)").matches, quitar = false;
+        try { quitar = localStorage.getItem("demo-motion") === "off"; } catch (e) {}
         if (sys) document.documentElement.classList.add("sys-reduce");
-        if (sys && !force) document.documentElement.classList.add("reduce");
+        if (quitar) document.documentElement.classList.add("reduce");
       })();
     </script>
     <slot name="head" />
@@ -40,36 +41,12 @@ const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL :
     <script is:inline>
       (function () {
         var root = document.documentElement, btn = document.querySelector("[data-motion-toggle]");
-        if (!root.classList.contains("sys-reduce")) return;
+        if (!root.classList.contains("sys-reduce") && !root.classList.contains("reduce")) return;
         btn.hidden = false;
         btn.textContent = root.classList.contains("reduce") ? "Activar animaciones" : "Reducir animaciones";
         btn.addEventListener("click", function () {
           try { localStorage.setItem("demo-motion", root.classList.contains("reduce") ? "on" : "off"); } catch (e) {}
           location.reload();
-        });
-      })();
-    </script>
-    <!-- Aviso la primera vez que el sistema pide reducir movimiento: esta demo trata de animaciones -->
-    <dialog class="demo-aviso" data-aviso-motion aria-labelledby="aviso-titulo">
-      <p class="demo-aviso-titulo" id="aviso-titulo">Tu equipo tiene las animaciones reducidas</p>
-      <p>Esta web es una demo de animaciones y 3D. Puedes verla con ellas o seguir con la versión tranquila; lo podrás cambiar abajo a la izquierda.</p>
-      <div class="demo-aviso-botones">
-        <button type="button" class="demo-aviso-si" data-aviso="on">Ver con animaciones</button>
-        <button type="button" class="demo-aviso-no" data-aviso="off">Seguir sin animaciones</button>
-      </div>
-    </dialog>
-    <script is:inline>
-      (function () {
-        var root = document.documentElement, aviso = document.querySelector("[data-aviso-motion]"), guardada = null;
-        try { guardada = localStorage.getItem("demo-motion"); } catch (e) {}
-        if (!root.classList.contains("sys-reduce") || guardada !== null || !aviso.showModal) return;
-        aviso.showModal();
-        aviso.querySelectorAll("[data-aviso]").forEach(function (b) {
-          b.addEventListener("click", function () {
-            var valor = b.getAttribute("data-aviso");
-            try { localStorage.setItem("demo-motion", valor); } catch (e) {}
-            if (valor === "on") location.reload(); else aviso.close();
-          });
         });
       })();
     </script>
@@ -92,18 +69,6 @@ const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL :
       }
       .demo-badge:hover { transform: translateY(-2px); }
       .demo-badge:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-      .demo-aviso {
-        max-width: min(440px, calc(100vw - 32px)); padding: 26px 24px 22px; border: 0; border-radius: 16px;
-        background: #faf8f4; color: #161412; font: 400 15px/1.55 system-ui, sans-serif; box-shadow: 0 30px 80px -20px rgb(0 0 0 / 0.5);
-      }
-      .demo-aviso::backdrop { background: rgb(10 10 10 / 0.55); backdrop-filter: blur(4px); }
-      .demo-aviso-titulo { font-weight: 700; font-size: 18px; margin: 0 0 8px; }
-      .demo-aviso p { margin: 0; }
-      .demo-aviso-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-      .demo-aviso button { padding: 0.75em 1.2em; border-radius: 999px; font: 600 14px/1 system-ui, sans-serif; cursor: pointer; border: 1px solid #161412; }
-      .demo-aviso-si { background: #161412; color: #faf8f4; }
-      .demo-aviso-no { background: transparent; color: #161412; }
-      .demo-aviso button:focus-visible { outline: 2px solid #2b59ff; outline-offset: 3px; }
     </style>
   </body>
 </html>
