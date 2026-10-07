@@ -140,7 +140,8 @@ export interface PiezaProducto { tipo: TipoRecipiente; arte: Arte; leche?: strin
 
 export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezasDef: PiezaProducto[], opciones: { movil: boolean }) {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, opciones.movil ? 1.6 : 1.75));
+  // En móvil se dibuja a menos resolución: la pantalla es pequeña y la GPU lo agradece (va fluido).
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, opciones.movil ? 1.25 : 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.shadowMap.enabled = true;
@@ -158,7 +159,7 @@ export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezas
   const sol = new THREE.DirectionalLight("#fff0dc", 2.4);
   sol.position.set(-5, 7, 9);
   sol.castShadow = true;
-  sol.shadow.mapSize.set(1024, 1024);
+  sol.shadow.mapSize.setScalar(opciones.movil ? 512 : 1024);
   Object.assign(sol.shadow.camera, { left: -12, right: 12, top: 9, bottom: -9, near: 1, far: 40 });
   sol.shadow.radius = 6;
   sol.shadow.bias = -0.0005;
@@ -235,10 +236,13 @@ export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezas
 
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), esc = new THREE.Vector3();
   const puntero = { x: 0, y: 0 };
-  const estado = { scroll: 0, vaiven: 1, activo: true };
+  // techo: altura (mundo) por debajo de la cual circulan los granos en móvil; la fija la página según el titular.
+  const estado = { scroll: 0, vaiven: 1, activo: true, techo: null as number | null };
+  const VIDA_ESQUIRLAS = opciones.movil ? 1.1 : 1.8; // en móvil desaparecen antes de que salga el titular
 
-  function vista() {
-    const h = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  /** Tamaño visible del mundo a la profundidad z (0 = plano de los vasos). */
+  function vista(z = 0) {
+    const h = 2 * (camera.position.z - z) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     return { w: h * camera.aspect, h };
   }
 
@@ -270,7 +274,7 @@ export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezas
     // Granos flotantes: suben con el scroll y giran despacio.
     semillas.forEach((s, i) => {
       // Franja por la que circulan: nunca por la zona del menú; en móvil, solo la mitad de abajo, lejos del titular.
-      const techo = opciones.movil ? v.h * 0.02 : v.h * 0.36, fondoY = -v.h * 0.7, alto = techo - fondoY;
+      const techo = opciones.movil ? (estado.techo ?? v.h * 0.02) : v.h * 0.36, fondoY = -v.h * 0.7, alto = techo - fondoY;
       const bruto = s.y * v.h * 0.6 + estado.scroll * 2.2 * s.vel + Math.sin(t * 0.5 + s.fase) * 0.15;
       const y = (((bruto % alto) + alto) % alto) + fondoY;
       pos.set(s.x * v.w * 0.55, y, s.z);
@@ -289,11 +293,11 @@ export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezas
         c.p.addScaledVector(c.v, dt);
         c.r.x += dt * 6; c.r.y += dt * 4;
         q.setFromEuler(c.r);
-        esc.setScalar(c.s * Math.max(0, 1 - tEsquirlas / 1.8));
+        esc.setScalar(c.s * Math.max(0, 1 - tEsquirlas / VIDA_ESQUIRLAS));
         esquirlas.setMatrixAt(i, m4.compose(c.p, q, esc));
       });
       esquirlas.instanceMatrix.needsUpdate = true;
-      if (tEsquirlas > 1.8) { tEsquirlas = -1; esquirlas.visible = false; }
+      if (tEsquirlas > VIDA_ESQUIRLAS) { tEsquirlas = -1; esquirlas.visible = false; }
     }
     pintar();
   }

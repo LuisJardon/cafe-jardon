@@ -36,8 +36,10 @@ function crearVapor() {
 }
 
 export function crearConfigurador(canvas: HTMLCanvasElement, opciones: { reducir: boolean }) {
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+  // Sin preserveDrawingBuffer (es caro): foto() pinta y lee la imagen en el mismo instante.
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  const movil = window.innerWidth < 861;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, movil ? 1.5 : 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.shadowMap.enabled = true;
@@ -53,7 +55,7 @@ export function crearConfigurador(canvas: HTMLCanvasElement, opciones: { reducir
   const sol = new THREE.DirectionalLight("#fff0dc", 2.3);
   sol.position.set(-4, 8, 5);
   sol.castShadow = true;
-  sol.shadow.mapSize.set(1024, 1024);
+  sol.shadow.mapSize.setScalar(movil ? 512 : 1024);
   Object.assign(sol.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 30 });
   sol.shadow.radius = 8;
   scene.add(sol);

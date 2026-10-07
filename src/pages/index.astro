@@ -385,6 +385,9 @@ const relatos = [
     --display: "Bricolage Grotesque Variable", system-ui, sans-serif;
     --mono: "DM Mono", ui-monospace, monospace;
     --serif: "Instrument Serif", Georgia, serif;
+    /* Lo que ocupa la barra del navegador del móvil cuando está visible (0 en escritorio). */
+    --barra: calc(100lvh - 100svh);
+    --demo-bar-bg: var(--espresso); /* en móvil la etiqueta "Demo" va al final, sobre el pie oscuro */
   }
 
   :global(html) { background: var(--crema); }
@@ -444,7 +447,8 @@ const relatos = [
     position: relative; overflow: hidden; isolation: isolate;
   }
   .btn::before {
-    content: ""; position: absolute; z-index: -1; left: -50%; top: 110%; width: 200%; aspect-ratio: 1;
+    content: ""; position: absolute; z-index: -1; left: -50%; top: 100%; width: 200%; aspect-ratio: 1;
+    margin-top: 12%; /* % del ANCHO: al girar, la ola ya no asoma por debajo en botones bajos (móvil) */
     border-radius: 42%; background: var(--espresso); transition: top 0.7s var(--ease);
     animation: ola 4s linear infinite;
   }
@@ -458,7 +462,8 @@ const relatos = [
   .btn-ghost:hover span { color: var(--espresso); }
 
   /* ---------- ESCENARIO ---------- */
-  .stage { position: relative; height: 100dvh; min-height: 560px; overflow: hidden; color: var(--tinta); }
+  /* lvh: alto con la barra del navegador escondida, así el escenario fijado no cambia de tamaño (ni salta) al aparecer o esconderse. */
+  .stage { position: relative; height: 100vh; height: 100lvh; min-height: 560px; overflow: hidden; color: var(--tinta); }
   .stage-bg { position: absolute; inset: 0; background: var(--crema); }
   .gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
 
@@ -491,6 +496,7 @@ const relatos = [
   .prod-ui { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
   .prod-lista { position: absolute; left: clamp(16px, 4vw, 48px); bottom: max(76px, 9vh); width: min(30vw, 360px); height: 13rem; }
   .pinfo { position: absolute; inset: auto 0 0 0; opacity: 0; }
+  .pinfo-foto[hidden] { display: none; } /* img { display: block } le quitaba el hidden y la ficha medía 800 px */
   .pinfo-origen { font: 500 0.82rem var(--mono); letter-spacing: 0.04em; color: var(--tinta-suave); }
   .pinfo h3 { font-weight: 800; font-stretch: 80%; font-size: clamp(2.2rem, 3.4vw, 3.2rem); line-height: 0.95; margin: 0.3rem 0 0.6rem; }
   .pinfo-notas { color: var(--tinta-suave); }
@@ -510,11 +516,11 @@ const relatos = [
 
   /* ---------- HISTORIA ---------- */
   .historia { position: relative; background: var(--espresso); color: var(--claro); margin-top: -26px; }
-  .historia-fondo { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
+  .historia-fondo { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; }
   .historia-fondo video { width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
   .historia-fondo::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 50%, transparent 30%, var(--espresso) 100%); }
-  .relatos { position: relative; margin-top: -100dvh; }
-  .relato { min-height: 100dvh; display: grid; place-items: center; padding: 0 clamp(16px, 6vw, 80px); }
+  .relatos { position: relative; margin-top: -100vh; margin-top: -100lvh; }
+  .relato { min-height: 100vh; min-height: 100lvh; display: grid; place-items: center; padding: 0 clamp(16px, 6vw, 80px); }
   .relato p { font-weight: 700; font-stretch: 85%; font-size: clamp(2.2rem, 5.4vw, 5rem); line-height: 1; letter-spacing: -0.03em; max-width: 18ch; text-align: center; }
 
   /* ---------- SECCIONES OSCURAS ---------- */
@@ -556,7 +562,7 @@ const relatos = [
     .item:hover .precio { color: var(--naranja); }
   }
 
-  .local-frame { height: 100dvh; display: grid; place-items: center; overflow: hidden; }
+  .local-frame { height: 100vh; height: 100lvh; display: grid; place-items: center; overflow: hidden; }
   .local-frame img { width: 100%; height: 100%; object-fit: cover; clip-path: inset(22% 26% round var(--radius)); }
   .local-copy { max-width: 40rem; padding: clamp(60px, 10vh, 120px) clamp(16px, 4vw, 48px); }
   .local-copy h2 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.02; letter-spacing: -0.04em; font-weight: 700; }
@@ -585,6 +591,9 @@ const relatos = [
   address { font-style: normal; margin-bottom: 2rem; line-height: 1.7; }
 
   .pie { padding: 0 clamp(16px, 4vw, 48px) 80px; overflow: hidden; }
+  /* La cursiva sobresale de su caja: con margen dentro de la máscara la "J" no sale cortada. */
+  .pie-mark :global(.pie-char) { padding: 0 0.12em; }
+  .pie-mark :global(.pie-char-mask) { margin: 0 -0.12em; }
   .pie-mark { font: italic 400 clamp(7rem, 30vw, 28rem)/0.9 var(--serif); letter-spacing: -0.03em; color: var(--naranja); padding-bottom: 0.08em; }
   .pie-row { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; color: var(--claro-suave); font-size: 0.9rem; padding-top: 1.6rem; border-top: 1px solid var(--line-oscuro); }
 
@@ -654,7 +663,7 @@ const relatos = [
     align-items: start; padding: clamp(100px, 14vh, 150px) clamp(16px, 4vw, 48px) clamp(120px, 18vh, 200px);
   }
   .config-escena {
-    position: sticky; top: 88px; height: min(76dvh, 700px); border-radius: var(--radius);
+    position: sticky; top: 88px; height: min(76svh, 700px); border-radius: var(--radius);
     background: radial-gradient(70% 60% at 50% 62%, #f8efe3 0%, #ead9c4 100%);
   }
   .config-escena canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
@@ -699,27 +708,33 @@ const relatos = [
   /* ---------- MÓVIL ---------- */
   @media (max-width: 860px) {
     .nav { gap: 0.7rem; }
+    /* El desenfoque sobre el 3D es caro en móvil: fondo casi opaco en su lugar. */
+    .nav::before { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(243 231 215 / 0.96); }
+    .nav[data-tema="oscuro"]::before { background: rgb(28 18 13 / 0.96); }
     .nav-pedido span { display: none; }
     .nav-pedido { padding: 0.3rem; }
     .config { grid-template-columns: 1fr; padding-top: 80px; }
-    .config-escena { top: 64px; height: 40dvh; z-index: 2; box-shadow: 0 18px 30px -18px rgb(43 26 16 / 0.35); }
+    /* Más baja y justo debajo del menú: deja sitio a las opciones en móviles pequeños. */
+    .config-escena { top: 76px; height: clamp(190px, 32svh, 300px); z-index: 2; box-shadow: 0 18px 30px -18px rgb(43 26 16 / 0.35); }
     .config-total { flex-direction: column; align-items: start; }
+    .config fieldset { margin-bottom: 1.1rem; }
+    .opcion span { padding: 0.55rem 0.85rem; font-size: 0.9rem; }
     .hero-ui { top: 84px; bottom: auto; right: 16px; max-width: none; }
     .hero-title { font-size: clamp(2.4rem, 11.2vw, 3.6rem); }
     .hero-sub { margin: 0.8rem 0 1.1rem; font-size: 0.98rem; }
     .btn { padding: 0.85em 1.4em; }
-    .gigantes { padding-top: 13vh; }
-    .prod-lista { left: 16px; right: 16px; width: auto; bottom: 108px; height: 10rem; }
+    .gigantes { padding-top: max(80px, 12svh); }
+    .prod-lista { left: 16px; right: 16px; width: auto; bottom: calc(96px + var(--barra)); height: 10rem; }
     .pinfo h3 { font-size: 2rem; }
     .pinfo-precio { margin-top: 0.4rem; font-size: 1.15rem; }
     .pinfo-notas { font-size: 0.95rem; }
-    .pasos { top: auto; bottom: 60px; left: 16px; right: 16px; translate: none; display: flex; justify-content: space-between; }
+    .pasos { top: auto; bottom: calc(28px + var(--barra)); left: 16px; right: 16px; translate: none; display: flex; justify-content: space-between; }
     .pasos span { display: none; }
     .pasos button { padding: 0.6rem; }
     .proceso-grid { grid-template-columns: 1fr; }
     .paso:nth-child(even) { margin-top: 0; }
     .manifiesto p { margin: 0; }
-    .local-frame { height: 70dvh; }
+    .local-frame { height: 70svh; }
     .visita { grid-template-columns: 1fr; }
   }
 
@@ -728,9 +743,9 @@ const relatos = [
   :global(html.reduce) .intro, :global(html.reduce) .gigantes, :global(html.reduce) .pasos { display: none; }
   :global(html.reduce) .stage { height: auto; overflow: visible; }
   /* El titular se queda en la primera pantalla (la sección crece con la lista de cafés). */
-  @media (min-width: 861px) { :global(html.reduce) .hero-ui { bottom: auto; top: calc(100dvh - max(76px, 9vh)); translate: 0 -100%; } }
-  :global(html.reduce) .stage-bg { position: static; height: 100dvh; }
-  :global(html.reduce) .gl { height: 100dvh; inset: 0 0 auto 0; }
+  @media (min-width: 861px) { :global(html.reduce) .hero-ui { bottom: auto; top: calc(100svh - max(76px, 9vh)); translate: 0 -100%; } }
+  :global(html.reduce) .stage-bg { position: static; height: 100svh; }
+  :global(html.reduce) .gl { height: 100svh; inset: 0 0 auto 0; }
   :global(html.reduce) .prod-ui { position: static; padding: 80px clamp(16px, 4vw, 48px) 140px; }
   :global(html.reduce) .prod-ui h2 { position: static; width: auto; height: auto; clip-path: none; font-weight: 800; font-stretch: 80%; font-size: clamp(2.4rem, 5vw, 4.6rem); margin-bottom: 2rem; }
   :global(html.reduce) .prod-lista { position: static; width: auto; height: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
@@ -807,15 +822,38 @@ const relatos = [
     const escena = crearEscena(canvas, productos.map((p) => p.diseno), productos.map((p) => p.pieza), { movil: movil() });
 
     type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number; s: number };
+
+    // ---- Móvil: el 3D se coloca en el hueco libre entre textos, medido en la página ----
+    const heroUi = $(".hero-ui");
+    // Píxel vertical del escenario -> altura en el mundo 3D a la profundidad z.
+    const aMundo = (py: number, z = 0) => (0.5 - py / canvas.clientHeight) * escena.vista(z).h;
+    const relStage = (el: Element) => el.getBoundingClientRect().top - stage.getBoundingClientRect().top;
+    // Parte visible del escenario (sin la barra del navegador ni el margen inferior).
+    const fondoVisible = () => Math.min(canvas.clientHeight, document.documentElement.clientHeight) - 20;
+    // Hueco bajo el titular del hero, en unidades del mundo.
+    const huecoHero = () => {
+      const arriba = relStage(heroUi) + heroUi.offsetHeight + 18;
+      return { arriba: aMundo(arriba), abajo: aMundo(fondoVisible()) };
+    };
+
     // Vasos de papel del hero: en grupo o saliendo por arriba.
     const pose = (i: number, tipo: "grupo" | "arriba"): Pose => {
       const v = escena.vista();
-      const s = movil() ? Math.min(0.62, v.w / 7.4) : Math.min(0.82, v.w / 15);
+      let s = Math.min(0.82, v.w / 15), cx = v.w * 0.24, cy = 0.1;
+      if (movil()) {
+        // El grupo mide unas 6,2 x 4,8 veces su escala (con la perspectiva) y su centro va algo a la derecha y arriba.
+        const h = huecoHero();
+        s = Math.min(0.62, (v.w * 0.92) / 6.2, ((h.arriba - h.abajo) * 0.94) / 4.8);
+        cx = -0.15 * s;
+        cy = (h.arriba + h.abajo) / 2 - 0.44 * s;
+      }
       if (tipo === "arriba") return { x: 0, y: v.h * 0.5 + 3.5, z: 0, rx: 0.5, ry: -Math.PI * 2, rz: 0.4, s };
-      const cx = movil() ? 0 : v.w * 0.24, cy = movil() ? -v.h * 0.2 : 0.1;
       const o = GRUPO[i];
       return { x: cx + o.x * s, y: cy + o.y * s, z: o.z, rx: o.rx, ry: o.ry, rz: o.rz, s };
     };
+    // Los granos flotantes del móvil no suben por encima del titular.
+    const fijarTecho = () => { escena.estado.techo = movil() ? huecoHero().arriba - 0.3 : null; };
+    fijarTecho();
     // Anchura de cada recipiente (con plato), para que ninguno se salga de la pantalla.
     const ANCHO = { espresso: 2.2, taza: 3.04, latte: 1.44, chemex: 2.04, cristal: 1.56 } as const;
     // Cafés de la sección de productos: en su recipiente real, entrando por arriba y saliendo por abajo.
@@ -823,9 +861,18 @@ const relatos = [
       const v = escena.vista();
       const { alto } = escena.piezas[i];
       const pz = productos[i].pieza;
-      const objetivo = movil() ? Math.min(2.4, v.w * 0.6) : 3.1;
-      const s = objetivo / Math.max(alto, ANCHO[pz.tipo] * 0.8);
-      if (tipo === "centro") return { x: 0, y: movil() ? 0.22 : -0.78, z: 1, rx: pz.rx, ry: 0, rz: 0, s };
+      let s = 3.1 / Math.max(alto, ANCHO[pz.tipo] * 0.8), y = -0.78;
+      if (movil()) {
+        // Entre la palabra gigante y la ficha del café, sin tocar ninguna de las dos.
+        const gig = $(`[data-gigante="${i}"]`), info = $$("[data-pinfo]")[i];
+        const arriba = aMundo(relStage(gig) + gig.offsetHeight + 8, 1);
+        const abajo = aMundo(relStage(info.parentElement!) + info.offsetTop - 24, 1);
+        // Alto aparente: el recipiente inclinado enseña también su boca (o el plato).
+        const altoVisto = alto * Math.cos(pz.rx) + ANCHO[pz.tipo] * Math.sin(pz.rx);
+        s = Math.min(((arriba - abajo) * 0.86) / altoVisto, (escena.vista(1).w * 0.84) / ANCHO[pz.tipo]);
+        y = (arriba + abajo) / 2;
+      }
+      if (tipo === "centro") return { x: 0, y, z: 1, rx: pz.rx, ry: 0, rz: 0, s };
       if (tipo === "arriba") return { x: 0, y: v.h * 0.5 + 3.5, z: 0, rx: pz.rx + 0.4, ry: -Math.PI * 2, rz: 0.4, s };
       return { x: 0, y: -v.h * 0.5 - 3.5, z: 0, rx: -0.5, ry: Math.PI, rz: -0.5, s };
     };
@@ -838,6 +885,7 @@ const relatos = [
 
     window.addEventListener("resize", () => {
       escena.redimensionar();
+      fijarTecho();
       if (reduceMotion) { productos.forEach((_, i) => colocar(i, pose(i, "grupo"))); escena.pintar(); }
     });
 
@@ -856,6 +904,8 @@ const relatos = [
 
     // ===== Versión animada =====
     history.scrollRestoration = "manual";
+    // Sin esto, cada vez que la barra del navegador del móvil aparece o se esconde se recalcula todo y la página da un salto.
+    ScrollTrigger.config({ ignoreMobileResize: true });
     window.scrollTo(0, 0);
     const lenis = startSmoothScroll();
     lenis?.stop();
@@ -873,10 +923,17 @@ const relatos = [
     const ajustarGigantes = () => $$("[data-gigante]").forEach((el) => {
       el.style.fontSize = "100px";
       const ancho = el.scrollWidth;
-      el.style.fontSize = Math.min((100 * innerWidth * (movil() ? 0.94 : 0.9)) / ancho, innerHeight * (movil() ? 0.16 : 0.27)) + "px";
+      const alto = document.documentElement.clientHeight; // no cambia al esconderse la barra del navegador
+      el.style.fontSize = Math.min((100 * innerWidth * (movil() ? 0.94 : 0.9)) / ancho, alto * (movil() ? 0.16 : 0.27)) + "px";
     });
     ajustarGigantes();
-    window.addEventListener("resize", ajustarGigantes);
+    // En el móvil la ventana "cambia de alto" al hacer scroll (barra del navegador): solo se reajusta si cambia el ancho.
+    let anchoPrevio = innerWidth;
+    window.addEventListener("resize", () => {
+      if (movil() && innerWidth === anchoPrevio) return;
+      anchoPrevio = innerWidth;
+      ajustarGigantes();
+    });
     const gigantes = $$("[data-gigante]").map((el) => SplitText.create(el, { type: "chars" }));
     const infos = $$("[data-pinfo]");
     gsap.set(gigantes.flatMap((g) => g.chars), { yPercent: 115 });
@@ -909,9 +966,9 @@ const relatos = [
       .to('[data-tela="der"]', { xPercent: 1.2, duration: 0.45, ease: "power3.out" }, "grieta")
       .addLabel("rotura", "+=0.15")
       .add(() => escena.estallar(escena.intro.position.clone()), "rotura")
-      .to(escena.der.position, { x: v0.w * 0.42, y: -0.6, z: 1, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      .to(escena.der.position, { x: v0.w * (movil() ? 0.8 : 0.42), y: -0.6, z: 1, duration: 1.3, ease: "expo.inOut" }, "rotura")
       .to(escena.der.rotation, { y: 1.4, z: -0.9, duration: 1.3, ease: "expo.inOut" }, "rotura")
-      .to(escena.izq.position, { x: -v0.w * 0.42, y: 0.5, z: 1, duration: 1.3, ease: "expo.inOut" }, "rotura")
+      .to(escena.izq.position, { x: -v0.w * (movil() ? 0.8 : 0.42), y: 0.5, z: 1, duration: 1.3, ease: "expo.inOut" }, "rotura")
       .to(escena.izq.rotation, { y: -1.3, z: 0.8, duration: 1.3, ease: "expo.inOut" }, "rotura")
       .to('[data-tela="izq"]', { xPercent: -62, rotate: -4, duration: 1.3, ease: "expo.inOut" }, "rotura")
       .to('[data-tela="der"]', { xPercent: 62, rotate: 4, duration: 1.3, ease: "expo.inOut" }, "rotura")
@@ -1020,9 +1077,9 @@ const relatos = [
         lenis ? lenis.scrollTo(y, { duration: 1.2, lock: true, force: true }) : window.scrollTo(0, y);
       }));
 
-      // Solo se pinta la escena 3D mientras se ve.
+      // Solo se pinta la escena 3D mientras se ve (deja de verse cuando el configurador llega arriba).
       ScrollTrigger.create({
-        trigger: ".historia", start: "top top",
+        trigger: "#tu-cafe", start: "top top",
         onEnter: () => (escena.estado.activo = false),
         onLeaveBack: () => (escena.estado.activo = true),
       });
@@ -1036,11 +1093,18 @@ const relatos = [
   // Color del menú según el fondo de la sección que tiene debajo.
   function montarNav() {
     const nav = $("[data-nav-bar]");
-    ScrollTrigger.create({ start: 40, end: "max", onToggle: (s) => nav.classList.toggle("solida", s.isActive) });
-    $$("[data-nav]").forEach((sec) => ScrollTrigger.create({
-      trigger: sec, start: "top 34px", end: "bottom 34px",
-      onToggle: (s) => { if (s.isActive) nav.dataset.tema = sec.dataset.nav; },
-    }));
+    // Fondo del menú en cuanto se baja (también al llegar al final, donde onToggle lo quitaba).
+    // Color: el de la sección que queda bajo el menú. Se mira en cada scroll (con disparadores sueltos,
+    // un salto largo, como un enlace del menú en móvil, podía dejarlo con el color equivocado).
+    const secciones = $$("[data-nav]");
+    ScrollTrigger.create({
+      start: 0, end: "max",
+      onUpdate: (s) => {
+        nav.classList.toggle("solida", s.scroll() > 40);
+        const bajo = secciones.find((sec) => { const r = sec.getBoundingClientRect(); return r.top <= 34 && r.bottom > 34; });
+        if (bajo) nav.dataset.tema = bajo.dataset.nav;
+      },
+    });
   }
 
   function montarResto() {
@@ -1048,10 +1112,11 @@ const relatos = [
 
     // Historia: el vídeo se acerca y las frases aparecen y se desvanecen.
     gsap.fromTo("[data-bucle]", { scale: 1.2 }, { scale: 1, ease: "none", scrollTrigger: { trigger: ".historia", start: "top bottom", end: "bottom top", scrub: true } });
+    const desenfoque = movil() ? "blur(6px)" : "blur(14px)"; // el desenfoque grande cuesta mucho en móvil
     $$(".relato p").forEach((p) => {
       gsap.timeline({ scrollTrigger: { trigger: p.parentElement, start: "top bottom", end: "bottom top", scrub: true } })
-        .fromTo(p, { opacity: 0, y: 90, filter: "blur(14px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1, ease: "power2.out" })
-        .to(p, { opacity: 0, y: -90, filter: "blur(14px)", duration: 1, ease: "power2.in" }, "+=0.5");
+        .fromTo(p, { opacity: 0, y: 90, filter: desenfoque }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1, ease: "power2.out" })
+        .to(p, { opacity: 0, y: -90, filter: desenfoque, duration: 1, ease: "power2.in" }, "+=0.5");
     });
 
     // Proceso.
@@ -1112,7 +1177,7 @@ const relatos = [
     const lineas = SplitText.create("[data-split-lines]", { type: "lines", mask: "lines" });
     gsap.from(lineas.lines, { yPercent: 105, duration: 1.1, stagger: 0.1, ease: "expo.out", scrollTrigger: { trigger: ".visita-info", start: "top 80%" } });
     gsap.from(".horario > div", { x: -30, opacity: 0, stagger: 0.08, duration: 0.8, ease: "expo.out", scrollTrigger: { trigger: ".horario", start: "top 85%" } });
-    const pie = SplitText.create(".pie-mark", { type: "chars", mask: "chars" });
+    const pie = SplitText.create(".pie-mark", { type: "chars", mask: "chars", charsClass: "pie-char" });
     gsap.from(pie.chars, { yPercent: 100, stagger: 0.05, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".pie", start: "top 85%" } });
   }
 
