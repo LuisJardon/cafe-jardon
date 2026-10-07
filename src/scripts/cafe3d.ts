@@ -21,13 +21,16 @@ const SERIF = '"Instrument Serif", Georgia, serif';
 /* ---------- Etiqueta del vaso, dibujada en un canvas ---------- */
 export function texturaEtiqueta(d: Diseno, aniso: number) {
   const W = 2048, H = 940;
+  // En móvil el vaso se ve pequeño: media resolución (4 veces menos píxeles que pintar y subir a la GPU).
+  const k = window.innerWidth < 861 ? 0.5 : 1;
   const c = document.createElement("canvas");
-  c.width = W; c.height = H;
+  c.width = W * k; c.height = H * k;
   const g = c.getContext("2d")! as CanvasRenderingContext2D & { letterSpacing: string; fontStretch: string };
+  g.scale(k, k);
   g.fillStyle = d.manga;
   g.fillRect(0, 0, W, H);
   // Grano del papel.
-  for (let i = 0; i < 9000; i++) {
+  for (let i = 0; i < 9000 * k; i++) {
     g.fillStyle = Math.random() < 0.5 ? `rgba(0,0,0,${Math.random() * 0.05})` : `rgba(255,255,255,${Math.random() * 0.05})`;
     g.fillRect(Math.random() * W, Math.random() * H, 2, 2);
   }
@@ -267,6 +270,11 @@ export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezas
       vaiven.rotation.y = Math.sin(t * 0.45 + i * 1.7) * 0.22 * estado.vaiven;
       vaiven.rotation.z = Math.sin(t * 0.6 + i) * 0.03 * estado.vaiven;
     });
+    // Lo que está escondido (a escala casi cero o fuera de pantalla) no se dibuja: ni en la imagen ni en las sombras.
+    const enJuego = (o: THREE.Object3D) => o.scale.x > 0.01 && Math.abs(o.position.y) < v.h * 0.5 + 3;
+    vasos.forEach(({ vaso }) => (vaso.visible = enJuego(vaso)));
+    piezas.forEach(({ soporte }) => (soporte.visible = enJuego(soporte)));
+    grupoFlot.visible = grupoFlot.scale.x > 0.01;
     // Inclinación hacia el ratón (con inercia).
     raiz.rotation.y += (puntero.x * 0.12 - raiz.rotation.y) * 0.05;
     raiz.rotation.x += (puntero.y * 0.07 - raiz.rotation.x) * 0.05;

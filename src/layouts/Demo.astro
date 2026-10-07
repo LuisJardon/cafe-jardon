@@ -1,5 +1,5 @@
 ---
-// Base común de todas las demos: <head>, metadatos y la etiqueta "Demo" que enlaza al portfolio.
+// Base común de todas las demos: <head>, metadatos y el botón para quitar/recuperar animaciones.
 interface Props {
   title: string;
   description: string;
@@ -34,15 +34,15 @@ const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL :
   </head>
   <body>
     <slot />
-    <div class="demo-bar">
-      <a class="demo-badge" href="https://luisjardonpiquero.com">Demo de portfolio · Luis Jardón</a>
-      <button class="demo-badge demo-motion" type="button" data-motion-toggle hidden></button>
+    <!-- Solo aparece si el sistema pide reducir movimiento: botón para quitar o recuperar las animaciones. -->
+    <div class="demo-bar" data-demo-bar hidden>
+      <button class="demo-badge demo-motion" type="button" data-motion-toggle></button>
     </div>
     <script is:inline>
       (function () {
         var root = document.documentElement, btn = document.querySelector("[data-motion-toggle]");
         if (!root.classList.contains("sys-reduce") && !root.classList.contains("reduce")) return;
-        btn.hidden = false;
+        document.querySelector("[data-demo-bar]").hidden = false;
         btn.textContent = root.classList.contains("reduce") ? "Activar animaciones" : "Reducir animaciones";
         btn.addEventListener("click", function () {
           try { localStorage.setItem("demo-motion", root.classList.contains("reduce") ? "on" : "off"); } catch (e) {}
@@ -53,7 +53,7 @@ const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL :
     <style is:global>
       .demo-bar { position: fixed; left: 16px; bottom: 16px; z-index: 90; display: flex; gap: 8px; flex-wrap: wrap; }
       .demo-motion { cursor: pointer; }
-      .demo-motion[hidden] { display: none; }
+      .demo-bar[hidden] { display: none; }
       .demo-badge {
         padding: 0.55em 0.95em;
         border-radius: 999px;
