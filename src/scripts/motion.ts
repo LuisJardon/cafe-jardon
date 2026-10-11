@@ -15,7 +15,8 @@ export function startSmoothScroll() {
   const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 1 });
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
-  gsap.ticker.lagSmoothing(0);
+  // Tras un parón (típico en móvil) las animaciones siguen desde donde iban en vez de saltar hacia delante.
+  gsap.ticker.lagSmoothing(500, 33);
 
   // Los enlaces internos (#carta…) también se desplazan con Lenis.
   document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {

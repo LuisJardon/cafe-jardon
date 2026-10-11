@@ -178,8 +178,18 @@ export function crearConfigurador(canvas: HTMLCanvasElement, opciones: { reducir
   new IntersectionObserver(([en]) => (visible = en.isIntersecting)).observe(canvas);
   const pintar = () => renderer.render(scene, camera);
 
+  // Resolución adaptable, como en el hero: si no llega a unos 45 fps, baja la resolución.
+  let pr = renderer.getPixelRatio(), sumaMs = 0, cuadros = 0;
+  const PR_MIN = movil ? 0.85 : 1;
   gsap.ticker.add((t, dtMs) => {
     if (!visible) return;
+    if (dtMs < 250) {
+      sumaMs += dtMs;
+      if (++cuadros >= 45) {
+        if (sumaMs / cuadros > 22 && pr > PR_MIN) { pr = Math.max(PR_MIN, pr - 0.2); renderer.setPixelRatio(pr); redimensionar(); }
+        sumaMs = 0; cuadros = 0;
+      }
+    }
     const dt = Math.min(dtMs / 1000, 0.05);
     if (!arrastrando) {
       vel *= 0.94;
@@ -203,6 +213,16 @@ export function crearConfigurador(canvas: HTMLCanvasElement, opciones: { reducir
   });
 
   redimensionar();
+
+  // Compila de antemano los shaders de todos los recipientes (en paralelo, sin bloquear):
+  // así cambiar de bebida no da un tirón la primera vez.
+  (async () => {
+    Object.values(grupos).forEach((g) => (g.visible = true));
+    try { await renderer.compileAsync(scene, camera); } catch { /* se compilarán al usarse */ }
+    // Solo queda a la vista el recipiente elegido (aplicar() pudo cambiarlo mientras tanto).
+    (Object.keys(grupos) as Tipo[]).forEach((t) => (grupos[t].visible = t === tipoActual));
+  })();
+
   return {
     aplicar,
     /** Imagen del recipiente actual (para la animación de "añadir al pedido"). */

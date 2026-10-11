@@ -255,7 +255,7 @@ const relatos = [
     <!-- HISTORIA: vídeo en bucle y frases que aparecen al bajar -->
     <section class="historia" id="historia" data-nav="oscuro" style={`clip-path:${bordeRasgado}`}>
       <div class="historia-fondo">
-        <video src={`${base}media/vertido-bucle.mp4`} poster={`${base}media/vertido-final.jpg`} muted loop playsinline autoplay preload="metadata" aria-hidden="true" data-bucle></video>
+        <video src={`${base}media/vertido-bucle.mp4`} poster={`${base}media/vertido-final.jpg`} muted loop playsinline preload="none" aria-hidden="true" data-bucle></video>
       </div>
       <div class="relatos">
         {relatos.map((r) => <div class="relato"><p>{r}</p></div>)}
@@ -272,7 +272,7 @@ const relatos = [
         <div class="proceso-grid">
           {proceso.map((paso, i) => (
             <article class="paso">
-              <div class="paso-img"><img src={u(paso.img, 900, 1100)} alt="" loading="lazy" width="900" height="1100" /></div>
+              <div class="paso-img"><img src={u(paso.img, 900, 1100)} srcset={`${u(paso.img, 500, 611)} 500w, ${u(paso.img, 900, 1100)} 900w`} sizes="(max-width: 860px) 92vw, 45vw" alt="" loading="lazy" decoding="async" width="900" height="1100" /></div>
               <div class="paso-txt">
                 <span class="paso-n" aria-hidden="true">{i + 1}</span>
                 <h3>{paso.verbo}</h3>
@@ -317,7 +317,11 @@ const relatos = [
       <!-- LOCAL -->
       <section class="local" aria-label="El local">
         <div class="local-frame" data-zoom>
-          <img src={u("1521017432531-fbd92d768814", 2000, 1300)} alt="Interior del local con clientes en la barra" loading="lazy" width="2000" height="1300" />
+          <picture>
+            <!-- En móvil el marco es vertical: una versión vertical de 900 px en vez de la de 2000 -->
+            <source media="(max-width: 860px)" srcset={u("1521017432531-fbd92d768814", 900, 1300)} />
+            <img src={u("1521017432531-fbd92d768814", 2000, 1300)} alt="Interior del local con clientes en la barra" loading="lazy" decoding="async" width="2000" height="1300" />
+          </picture>
         </div>
         <div class="local-copy">
           <h2>Doce taburetes, una barra larga y el tostador a la vista.</h2>
@@ -337,7 +341,7 @@ const relatos = [
       <!-- VISITA -->
       <section class="visita" id="visita">
         <figure class="barista" data-reveal-img>
-          <img src={u("1718791985055-e1b06ef5961d", 900, 1150)} alt="Dani, jefe de barra, preparando un café" loading="lazy" width="900" height="1150" />
+          <img src={u("1718791985055-e1b06ef5961d", 900, 1150)} srcset={`${u("1718791985055-e1b06ef5961d", 600, 767)} 600w, ${u("1718791985055-e1b06ef5961d", 900, 1150)} 900w`} sizes="(max-width: 860px) 92vw, 40vw" alt="Dani, jefe de barra, preparando un café" loading="lazy" decoding="async" width="900" height="1150" />
           <figcaption>Dani Llaneza, jefe de barra.</figcaption>
         </figure>
         <div class="visita-info">
@@ -477,6 +481,9 @@ const relatos = [
   }
 
   .intro { position: absolute; inset: 0; z-index: 2; }
+  /* Mientras carga el JS, solo la pantalla de carga: sin esto el titular y las 4 palabras gigantes
+     se veían amontonados encima de la intro. El script los hace visibles ya en su estado inicial. */
+  :global(html:not(.reduce)) .hero-ui, :global(html:not(.reduce)) .gigantes, :global(html:not(.reduce)) .nav { visibility: hidden; }
   .tela { position: absolute; inset: 0; filter: drop-shadow(0 0 30px rgb(0 0 0 / 0.45)); }
   .tela > div { position: absolute; inset: 0; background: var(--espresso); }
   .intro-marca {
@@ -566,6 +573,7 @@ const relatos = [
   }
 
   .local-frame { height: 100vh; height: 100lvh; display: grid; place-items: center; overflow: hidden; }
+  .local-frame picture { display: contents; }
   .local-frame img { width: 100%; height: 100%; object-fit: cover; clip-path: inset(22% 26% round var(--radius)); }
   .local-copy { max-width: 40rem; padding: clamp(60px, 10vh, 120px) clamp(16px, 4vw, 48px); }
   .local-copy h2 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.02; letter-spacing: -0.04em; font-weight: 700; }
@@ -821,7 +829,7 @@ const relatos = [
   Promise.all([
     document.fonts.load('800 100px "Bricolage Grotesque Variable"'),
     document.fonts.load('italic 100px "Instrument Serif"'),
-  ]).then(() => document.fonts.ready).then(() => {
+  ]).then(() => document.fonts.ready).then(async () => {
     const escena = crearEscena(canvas, productos.map((p) => p.diseno), productos.map((p) => p.pieza), { movil: movil() });
 
     type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number; s: number };
@@ -902,6 +910,7 @@ const relatos = [
       escena.pintar();
       ScrollTrigger.create({ trigger: stage, start: "top bottom", end: "bottom top", onToggle: (s) => (escena.estado.activo = s.isActive) });
       montarNav();
+      window.dispatchEvent(new Event("intro-lista"));
       return;
     }
 
@@ -943,6 +952,7 @@ const relatos = [
     gsap.set(infos, { opacity: 0, y: 30 });
     gsap.set(titulo.chars, { yPercent: 110 });
     gsap.set(["[data-hero-fade]", ".nav"], { opacity: 0, y: 20 });
+    gsap.set([".hero-ui", ".gigantes", ".nav"], { visibility: "visible" }); // ya están en su estado inicial
 
     // Posición inicial: vasos en su sitio pero sin tamaño; grano de la intro en el centro.
     productos.forEach((_, i) => colocar(i, pose(i, "grupo"), 0));
@@ -953,11 +963,17 @@ const relatos = [
     const balanceo = gsap.fromTo(escena.intro.rotation, { y: -0.45, x: 0.15 }, { y: 0.45, x: -0.1, duration: 2.2, ease: "sine.inOut", repeat: -1, yoyo: true });
 
     // ---------- INTRO: carga, el grano se parte y la pantalla se rasga ----------
-    const intro = gsap.timeline({ delay: 0.3 });
+    // La barra avanza mientras el 3D se prepara de verdad; la intro solo arranca con todo listo en la GPU,
+    // así en el móvil siempre empieza en el grano entero (antes un parón de carga la hacía saltar).
+    escena.intro.scale.setScalar(0);
+    const carga = gsap.to("[data-barra]", { scaleX: 0.75, duration: 2.5, ease: "power1.out" });
+    await escena.preparar();
+    escena.intro.scale.setScalar(movil() ? 1.15 : 1.45);
+    carga.kill();
+    const intro = gsap.timeline({ delay: 0.1 });
     intro
       .from(escena.intro.scale, { x: 0, y: 0, z: 0, duration: 1.1, ease: "back.out(1.7)" }, 0)
-      .from("[data-intro-ui]", { opacity: 0, y: 12, duration: 0.8, ease: "expo.out" }, 0.2)
-      .to("[data-barra]", { scaleX: 1, duration: 1.4, ease: "power2.inOut" }, 0.3)
+      .to("[data-barra]", { scaleX: 1, duration: 0.9, ease: "power2.inOut" }, 0.2)
       .add(() => balanceo.kill())
       .to(escena.intro.rotation, { x: 0, y: 0, duration: 0.35, ease: "power2.out" })
       .to("[data-intro-ui]", { opacity: 0, duration: 0.3 }, "<")
@@ -987,6 +1003,7 @@ const relatos = [
         escena.intro.visible = false;
         lenis?.start();
         montarScroll();
+        window.dispatchEvent(new Event("intro-lista")); // ahora ya puede prepararse el configurador
       });
 
     // Tipografía cinética: las letras del titular se ensanchan cerca del cursor.
@@ -1201,6 +1218,10 @@ const relatos = [
   const reducir = document.documentElement.classList.contains("reduce");
   const euros = (n: number) => n.toFixed(2).replace(".", ",") + " €";
 
+  // ---------- Vídeo de la historia: solo se reproduce (y se descarga) cuando está cerca de verse ----------
+  const video = document.querySelector<HTMLVideoElement>("[data-bucle]")!;
+  if (!reducir) new IntersectionObserver(([e]) => (e.isIntersecting ? video.play().catch(() => {}) : video.pause()), { rootMargin: "50% 0px" }).observe(video);
+
   // ---------- Menú hamburguesa ----------
   const menuBtn = document.querySelector<HTMLButtonElement>("[data-menu-btn]")!;
   const menu = document.querySelector<HTMLElement>("[data-menu]")!;
@@ -1297,9 +1318,22 @@ const relatos = [
   pintarPedido();
 
   // ---------- Escena 3D (cuando estén las fuentes de la etiqueta) ----------
+  // El 3D del configurador se crea cuando acaba la intro (en un momento libre) o al acercarse a él,
+  // nunca a la vez que la carga: en el móvil competían los dos y todo tardaba más en arrancar.
+  const cuandoToque = new Promise<void>((listo) => {
+    let hecho = false;
+    const ya = () => { if (!hecho) { hecho = true; listo(); } };
+    window.addEventListener("intro-lista", () => {
+      if ("requestIdleCallback" in window) requestIdleCallback(ya, { timeout: 1500 }); else setTimeout(ya, 300);
+    }, { once: true });
+    new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); ya(); } }, { rootMargin: "100% 0px" })
+      .observe(document.querySelector("#tu-cafe")!);
+  });
+
   Promise.all([
     document.fonts.load('800 100px "Bricolage Grotesque Variable"'),
     document.fonts.load('italic 100px "Instrument Serif"'),
+    cuandoToque,
   ]).then(() => {
     const canvas = document.querySelector<HTMLCanvasElement>("[data-config-gl]")!;
     const escena = crearConfigurador(canvas, { reducir });

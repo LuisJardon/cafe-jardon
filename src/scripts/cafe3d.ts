@@ -259,8 +259,41 @@ export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezas
 
   function pintar() { renderer.render(scene, camera); }
 
+  /** Deja todo listo en la GPU (shaders, texturas, sombras) ANTES de animar. Sin esto, el móvil se congela
+   *  la primera vez que aparece cada vaso o bebida, y la intro saltaba hacia delante (el grano salía ya partido). */
+  async function preparar() {
+    const todos: THREE.Object3D[] = [...vasos.map((v) => v.vaso), ...piezas.map((p) => p.soporte), grupoFlot, esquirlas, intro];
+    const antes = todos.map((o) => ({ v: o.visible, s: o.scale.clone() }));
+    todos.forEach((o) => { o.visible = true; if (o.scale.x < 0.01) o.scale.setScalar(0.01); });
+    // compileAsync compila en paralelo sin bloquear la página (si el navegador lo permite).
+    try { await renderer.compileAsync(scene, camera); } catch { /* sin compilación en paralelo: se compila al pintar */ }
+    scene.traverse((o) => {
+      const mats = (o as THREE.Mesh).material;
+      if (mats) [mats].flat().forEach((m) => { const mapa = (m as THREE.MeshStandardMaterial).map; if (mapa) renderer.initTexture(mapa); });
+    });
+    pintar(); // primera pasada completa: sombras incluidas
+    todos.forEach((o, i) => { o.visible = antes[i].v; o.scale.copy(antes[i].s); });
+    pintar();
+  }
+
+  // Resolución adaptable: si el dispositivo no llega a unos 45 fps, el 3D baja de resolución (y ya no vuelve a subir).
+  const PR_MIN = opciones.movil ? 0.75 : 1;
+  let prActual = renderer.getPixelRatio(), sumaMs = 0, cuadros = 0;
+  function vigilarRitmo(dtMs: number) {
+    if (dtMs > 250) return; // pestaña en segundo plano o un parón puntual: no cuenta
+    sumaMs += dtMs;
+    if (++cuadros < 45) return;
+    if (sumaMs / cuadros > 22 && prActual > PR_MIN) {
+      prActual = Math.max(PR_MIN, prActual - 0.25);
+      renderer.setPixelRatio(prActual);
+      redimensionar();
+    }
+    sumaMs = 0; cuadros = 0;
+  }
+
   function tick(t: number, dtMs: number) {
     if (!estado.activo) return;
+    vigilarRitmo(dtMs);
     const dt = Math.min(dtMs / 1000, 0.05); // gsap.ticker da milisegundos
     const v = vista();
     // Balanceo suave de cada vaso.
@@ -350,6 +383,6 @@ export function crearEscena(canvas: HTMLCanvasElement, disenos: Diseno[], piezas
     vasos: vasos.map((v) => v.vaso),
     piezas: piezas.map((p) => ({ soporte: p.soporte, alto: p.alto })),
     intro, izq, der, grupoFlot, estado, puntero,
-    vista, redimensionar, pintar, estallar, foto,
+    vista, redimensionar, pintar, estallar, foto, preparar,
   };
 }
