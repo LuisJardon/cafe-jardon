@@ -141,9 +141,16 @@ export function crearTaza(opciones: { demitasse?: boolean } = {}): Recipiente {
     : [[0, 0.12], [0.5, 0.12], [0.56, 0.16], [0.66, 0.34], [0.8, 0.86], [0.88, 1.3], [0.9, 1.38], [0.86, 1.4], [0.82, 1.33], [0.74, 0.88], [0.6, 0.4], [0.4, 0.26], [0, 0.24]]
   ).map(([x, y]) => new THREE.Vector2(x, y));
   const cuerpo = new THREE.Mesh(new THREE.LatheGeometry(perfil, 96), m);
-  const asa = new THREE.Mesh(new THREE.TorusGeometry(opciones.demitasse ? 0.2 : 0.3, opciones.demitasse ? 0.06 : 0.07, 18, 48, Math.PI * 1.2), m);
-  asa.rotation.z = -Math.PI * 0.6;
-  asa.position.set(opciones.demitasse ? 0.8 : 0.94, opciones.demitasse ? 0.68 : 0.86, 0);
+  // Asa: una curva que nace DENTRO de la pared por arriba y por abajo (el arco de antes dejaba el extremo
+  // de abajo separado de la taza y parecía flotar). Puntos (x, y) medidos sobre el perfil de cada taza.
+  const curvaAsa = (opciones.demitasse
+    ? [[0.665, 0.92], [0.85, 0.95], [0.97, 0.78], [0.92, 0.56], [0.76, 0.45], [0.53, 0.42]]
+    : [[0.815, 1.12], [1.02, 1.15], [1.2, 0.98], [1.17, 0.72], [0.98, 0.6], [0.694, 0.6]]
+  ).map(([x, y]) => new THREE.Vector3(x, y, 0));
+  const asa = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(curvaAsa), 48, opciones.demitasse ? 0.055 : 0.065, 14),
+    m,
+  );
   const plato = new THREE.Mesh(new THREE.LatheGeometry([
     [0, 0], [1.1, 0], [1.42, 0.07], [1.52, 0.15], [1.47, 0.17], [1.15, 0.1], [0.62, 0.07], [0, 0.07],
   ].map(([x, y]) => new THREE.Vector2(x, y)), 96), m);

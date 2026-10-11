@@ -768,7 +768,7 @@ const relatos = [
 </style>
 
 <script>
-  import { gsap, ScrollTrigger, SplitText, startSmoothScroll, magnetic, reduceMotion, finePointer } from "../scripts/motion";
+  import { gsap, ScrollTrigger, SplitText, Observer, startSmoothScroll, magnetic, reduceMotion, finePointer } from "../scripts/motion";
   import { crearEscena, type Diseno, type PiezaProducto } from "../scripts/cafe3d";
   import type * as THREE from "three";
 
@@ -830,6 +830,7 @@ const relatos = [
     document.fonts.load('800 100px "Bricolage Grotesque Variable"'),
     document.fonts.load('italic 100px "Instrument Serif"'),
   ]).then(() => document.fonts.ready).then(async () => {
+    performance.mark("cafe-fuentes");
     const escena = crearEscena(canvas, productos.map((p) => p.diseno), productos.map((p) => p.pieza), { movil: movil() });
 
     type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number; s: number };
@@ -967,10 +968,14 @@ const relatos = [
     // así en el móvil siempre empieza en el grano entero (antes un parón de carga la hacía saltar).
     escena.intro.scale.setScalar(0);
     const carga = gsap.to("[data-barra]", { scaleX: 0.75, duration: 2.5, ease: "power1.out" });
+    performance.mark("cafe-escena-creada");
     await escena.preparar();
+    performance.mark("cafe-escena-preparada");
     escena.intro.scale.setScalar(movil() ? 1.15 : 1.45);
     carga.kill();
     const intro = gsap.timeline({ delay: 0.1 });
+    // En móvil la misma coreografía, un 35 % más rápida: la espera hasta poder usar la web se notaba larga.
+    if (movil()) intro.timeScale(1.35);
     intro
       .from(escena.intro.scale, { x: 0, y: 0, z: 0, duration: 1.1, ease: "back.out(1.7)" }, 0)
       .to("[data-barra]", { scaleX: 1, duration: 0.9, ease: "power2.inOut" }, 0.2)
@@ -1044,7 +1049,8 @@ const relatos = [
           trigger: stage, start: "top top", end: () => "+=" + innerHeight * (N + 0.4), pin: true, scrub: 0.8,
           invalidateOnRefresh: true,
           // Imán al café más cercano a la posición actual (sin proyectar la inercia, que hacía saltarse cafés).
-          snap: {
+          // Solo con ratón: en pantallas táctiles se usa "un deslizamiento = un café" (más abajo).
+          snap: !finePointer ? undefined : {
             snapTo: (v: number, self?: ScrollTrigger) => {
               const p = self ? self.progress : v;
               return Object.values(tl.labels).map((t) => t / tl.duration()).reduce((a, b) => (Math.abs(b - p) < Math.abs(a - p) ? b : a));
@@ -1089,13 +1095,71 @@ const relatos = [
       }
       tl.to({}, { duration: 0.3 }); // pausa final antes de soltar el escenario
 
-      // Los botones de la derecha llevan a cada café.
-      pasosBtns.forEach((b, k) => b.addEventListener("click", () => {
-        const st = tl.scrollTrigger!;
-        const y = st.start + (tl.labels["p" + k] / tl.duration()) * (st.end - st.start);
-        // Mientras dura el desplazamiento se bloquea la rueda, así el imán no lo lleva a otro café.
-        lenis ? lenis.scrollTo(y, { duration: 1.2, lock: true, force: true }) : window.scrollTo(0, y);
-      }));
+      // Paradas del escenario: 0 = hero, 1..N = cada café. Posición de scroll exacta de cada una.
+      const st = tl.scrollTrigger!;
+      const etapas = ["inicio", ...productos.map((_, k) => "p" + k)];
+      const yDe = (k: number) => st.start + (tl.labels[etapas[k]] / tl.duration()) * (st.end - st.start);
+      const masCercana = () => {
+        let mejor = 0;
+        etapas.forEach((_, k) => { if (Math.abs(yDe(k) - scrollY) < Math.abs(yDe(mejor) - scrollY)) mejor = k; });
+        return mejor;
+      };
+      let actual = 0, moviendo = false;
+      const ir = (k: number, duracion = 0.9) => {
+        actual = k;
+        moviendo = true;
+        const fin = () => { moviendo = false; };
+        if (!finePointer) {
+          // Táctil: animación propia (Lenis no suaviza el táctil y terminaba al instante, sin bloquear nada).
+          const pos = { y: scrollY };
+          gsap.to(pos, { y: yDe(k), duration: duracion, ease: "power3.inOut", overwrite: true, onUpdate: () => window.scrollTo(0, pos.y), onComplete: fin });
+        } else if (lenis) {
+          // lock: mientras dura el desplazamiento no se acepta otro gesto; así nunca se salta un café.
+          lenis.scrollTo(yDe(k), { duration: duracion, lock: true, force: true, onComplete: fin });
+        } else { window.scrollTo(0, yDe(k)); fin(); }
+      };
+
+      // Los botones llevan a cada café.
+      pasosBtns.forEach((b, k) => b.addEventListener("click", () => ir(k + 1, 1.2)));
+
+      // ---------- Pantallas táctiles: un deslizamiento = un café, siempre exacto ----------
+      // El imán esperaba a que acabase la inercia del dedo: con un gesto fuerte la página ya se había
+      // pasado uno o dos cafés. Aquí el gesto se captura dentro del escenario y lleva justo al siguiente.
+      if (!finePointer) {
+        let usado = false;
+        const gesto = Observer.create({
+          target: window, type: "touch", tolerance: 12, preventDefault: true,
+          ignore: "[data-pedido], [data-menu]",
+          // El Observer avisa varias veces durante un mismo gesto: solo cuenta la primera (un gesto = un paso).
+          onPress: () => { usado = false; },
+          onUp: () => { // dedo hacia arriba: siguiente
+            if (usado || moviendo) return;
+            usado = true;
+            if (actual < N) ir(actual + 1);
+            else { // después del último café se sigue bajando con normalidad
+              activar(false);
+              const pos = { y: scrollY };
+              gsap.to(pos, { y: st.end + 2, duration: 0.4, ease: "power2.out", onUpdate: () => window.scrollTo(0, pos.y) });
+            }
+          },
+          onDown: () => { if (usado || moviendo || actual === 0) return; usado = true; ir(actual - 1); }, // dedo hacia abajo: anterior
+        });
+        // Solo dentro del escenario; fuera, el scroll es el normal del móvil. touch-action: none es lo que
+        // de verdad impide que el navegador desplace la página por su cuenta mientras se captura el gesto.
+        const activar = (si: boolean) => {
+          if (si) { gesto.enable(); actual = masCercana(); } else gesto.disable();
+          document.documentElement.style.touchAction = si ? "none" : "";
+        };
+        const fuera = ScrollTrigger.create({ start: () => st.start, end: () => st.end, onToggle: (s) => activar(s.isActive) });
+        activar(scrollY >= fuera.start && scrollY < fuera.end); // al cargar arriba del todo ya se está dentro
+        // Si se llega al escenario con inercia o con un enlace del menú y se queda entre dos cafés, se recoloca.
+        ScrollTrigger.addEventListener("scrollEnd", () => {
+          if (!moviendo && scrollY > st.start && scrollY < st.end) {
+            const k = masCercana();
+            if (Math.abs(yDe(k) - scrollY) > 2) ir(k, 0.6); else actual = k;
+          }
+        });
+      }
 
       // Solo se pinta la escena 3D mientras se ve (deja de verse cuando el configurador llega arriba).
       ScrollTrigger.create({

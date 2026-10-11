@@ -2,9 +2,10 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
+import { Observer } from "gsap/Observer";
 import Lenis from "lenis";
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
+gsap.registerPlugin(ScrollTrigger, SplitText, Observer);
 
 // La clase la pone Demo.astro: sistema con "reducir movimiento" y el visitante no las ha activado.
 export const reduceMotion = document.documentElement.classList.contains("reduce");
@@ -45,4 +46,4 @@ export function magnetic(el: HTMLElement, strength = 0.35) {
   });
 }
 
-export { gsap, ScrollTrigger, SplitText };
+export { gsap, ScrollTrigger, SplitText, Observer };
